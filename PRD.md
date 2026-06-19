@@ -1065,13 +1065,42 @@ Response:
 }
 ```
 
-### 17.4 Products
+### 17.4 Agent Chat
+
+#### `POST /api/agent/chat`
+
+Uses OpenAI to map a free-form user message to one supported agent scenario, then runs the same T3N-gated agent workflow.
+
+Request:
+
+```json
+{
+  "message": "My lens solution is low. Refill it if the mandate allows it."
+}
+```
+
+Response includes the normal agent run payload plus:
+
+```json
+{
+  "userMessage": "My lens solution is low. Refill it if the mandate allows it.",
+  "orchestration": {
+    "model": "gpt-5.4-mini",
+    "scenario": "success",
+    "confidence": 0.94,
+    "rationale": "The user requested a normal approved contact lens solution refill.",
+    "userFacingReply": "I mapped this to an approved lens solution refill request."
+  }
+}
+```
+
+### 17.5 Products
 
 #### `GET /api/products?category=contact_lens_solution`
 
 Returns mock products.
 
-### 17.5 Audit
+### 17.6 Audit
 
 #### `GET /api/audit`
 
@@ -2043,4 +2072,3 @@ Contact lens solution at 15%
 ## 34. Pitch Summary
 
 RefillGuard is a bounded autonomous refill agent for health and pet essentials. The user delegates a narrow mandate such as: “Buy my approved contact lens solution when bottle level is below 20%, only from Guardian or Watsons, under S$18, max one bottle.” The agent can detect low stock and choose a product, but it cannot checkout directly. Terminal 3 verifies the human, verifies the agent, enforces the mandate, substitutes sealed payment and delivery details, restricts unauthorized merchants, and creates an auditable record. The result is an AI agent that can act on behalf of the user without becoming an unsafe autonomous buyer.
-

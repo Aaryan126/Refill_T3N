@@ -11,9 +11,22 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## OpenAI LLM Orchestration
+
+The chat bar is backed by OpenAI. Free-form text is sent to `/api/agent/chat`, where the LLM selects one allowed agent action, then the existing agent runner creates the purchase intent and asks T3N for authorization.
+
+Add these values to `.env`:
+
+```bash
+OPENAI_API_KEY=your_openai_key
+OPENAI_MODEL=gpt-5.4-mini
+```
+
+`OPENAI_MODEL` is configurable because model access can vary by account. If the model slug is different in your OpenAI project, update the env value without changing code.
+
 ## Demo
 
-Use the scenario buttons to run:
+Use the chat shortcuts or type directly in the chat bar to run:
 
 - successful contact lens refill
 - no refill needed

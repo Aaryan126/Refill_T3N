@@ -39,6 +39,11 @@ type DemoState = {
 };
 
 type View = "chat" | "mandates" | "audit";
+type RunState = DemoScenario | "llm";
+type ChatOnlyReply = {
+  userMessage: string;
+  assistantMessage: string;
+};
 
 const scenarios: Array<{ id: DemoScenario; label: string; prompt: string; tone: "run" | "block" | "neutral" }> = [
   { id: "success", label: "Approve refill", prompt: "My lens solution is low. Refill it if the mandate allows it.", tone: "run" },
@@ -60,17 +65,16 @@ const money = new Intl.NumberFormat("en-SG", {
 export default function Home() {
   const [state, setState] = useState<DemoState | null>(null);
   const [result, setResult] = useState<AgentRunResult | null>(null);
-  const [running, setRunning] = useState<DemoScenario | null>(null);
+  const [running, setRunning] = useState<RunState | null>(null);
   const [stockValue, setStockValue] = useState(15);
   const [activeView, setActiveView] = useState<View>("chat");
   const [selectedScenario, setSelectedScenario] = useState<DemoScenario>("success");
+  const [chatInput, setChatInput] = useState(scenarios[0].prompt);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatOnlyReply, setChatOnlyReply] = useState<ChatOnlyReply | null>(null);
 
-  const lensInventory = state?.inventory.find((item) => item.id === "inventory_lens_001");
-  const lensMandate = state?.mandates.find((mandate) => mandate.id === "mandate_lens_001");
   const visibleMandates = useMemo(() => state?.mandates ?? [], [state?.mandates]);
   const auditRows = state?.audit.slice(0, 12) ?? [];
-  const selectedPrompt = scenarios.find((scenario) => scenario.id === selectedScenario)?.prompt ?? scenarios[0].prompt;
-
   useEffect(() => {
     void refreshState();
   }, []);
@@ -95,40 +99,65 @@ export default function Home() {
     await refreshState();
   }
 
-  async function runScenario(scenario: DemoScenario = selectedScenario) {
-    setSelectedScenario(scenario);
-    setRunning(scenario);
+  async function runChat() {
+    const message = chatInput.trim();
+    if (!message) return;
+
+    setChatError(null);
+    setRunning("llm");
     setActiveView("chat");
-    const response = await fetch("/api/agent/run", {
+    const response = await fetch("/api/agent/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mandateId: lensMandate?.id, scenario })
+      body: JSON.stringify({ message })
     });
     const body = await response.json();
-    setResult(body);
-    await refreshState();
+    if (!response.ok) {
+      setChatError(body.error ?? "Agent chat failed.");
+      setChatOnlyReply(null);
+    } else if (body.type === "message") {
+      setResult(null);
+      setChatOnlyReply({
+        userMessage: body.userMessage,
+        assistantMessage: body.assistantMessage
+      });
+    } else {
+      setResult(body);
+      setChatOnlyReply(null);
+      setSelectedScenario(body.scenario ?? selectedScenario);
+      await refreshState();
+    }
     setRunning(null);
+  }
+
+  function selectScenarioShortcut(scenario: DemoScenario) {
+    setSelectedScenario(scenario);
+    setChatInput(scenarios.find((item) => item.id === scenario)?.prompt ?? scenarios[0].prompt);
   }
 
   async function resetDemo() {
     setResult(null);
+    setChatOnlyReply(null);
     await fetch("/api/demo/reset", { method: "POST" });
     await refreshState();
   }
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1680px] grid-cols-1 lg:grid-cols-[280px_1fr_380px]">
-        <section className="order-1 flex min-h-screen flex-col border-x border-slate-200 bg-white lg:order-2">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1680px] grid-cols-1 lg:h-screen lg:grid-cols-[280px_1fr_380px] lg:overflow-hidden">
+        <section className="order-1 flex h-[100dvh] min-h-0 flex-col border-x border-slate-200 bg-white lg:order-2 lg:h-screen">
           <TopBar result={result} running={running} />
           {activeView === "chat" ? (
             <ChatWorkspace
               result={result}
+              chatOnlyReply={chatOnlyReply}
               running={running}
-              selectedPrompt={selectedPrompt}
+              chatError={chatError}
+              chatInput={chatInput}
               selectedScenario={selectedScenario}
-              setSelectedScenario={setSelectedScenario}
-              runScenario={() => void runScenario()}
+              setChatInput={setChatInput}
+              setSelectedScenario={selectScenarioShortcut}
+              runChat={() => void runChat()}
             />
           ) : activeView === "mandates" ? (
             <MandatesPage inventory={state?.inventory ?? []} mandates={visibleMandates} />
@@ -177,7 +206,7 @@ function Sidebar({
   ];
 
   return (
-    <aside className="order-2 flex flex-col gap-5 border-b border-slate-200 bg-slate-50 p-4 lg:order-1 lg:min-h-screen lg:border-b-0">
+    <aside className="order-2 flex flex-col gap-5 border-b border-slate-200 bg-slate-50 p-4 lg:order-1 lg:h-screen lg:overflow-auto lg:border-b-0">
       <div className="flex items-center gap-3 px-1">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white">
           <ShieldCheck className="h-5 w-5" />
@@ -263,7 +292,7 @@ function Sidebar({
   );
 }
 
-function TopBar({ result, running }: { result: AgentRunResult | null; running: DemoScenario | null }) {
+function TopBar({ result, running }: { result: AgentRunResult | null; running: RunState | null }) {
   const auth = result?.authorizationResult;
   const status = running ? "Running" : auth?.status ? statusLabel(auth.status) : "Ready";
 
@@ -285,39 +314,63 @@ function TopBar({ result, running }: { result: AgentRunResult | null; running: D
 }
 
 function ChatWorkspace({
+  chatError,
+  chatInput,
+  chatOnlyReply,
   result,
   running,
-  runScenario,
-  selectedPrompt,
+  runChat,
   selectedScenario,
+  setChatInput,
   setSelectedScenario
 }: {
+  chatError: string | null;
+  chatInput: string;
+  chatOnlyReply: ChatOnlyReply | null;
   result: AgentRunResult | null;
-  running: DemoScenario | null;
-  runScenario: () => void;
-  selectedPrompt: string;
+  running: RunState | null;
+  runChat: () => void;
   selectedScenario: DemoScenario;
+  setChatInput: (value: string) => void;
   setSelectedScenario: (scenario: DemoScenario) => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-5 overflow-auto px-4 py-6 sm:px-6">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-6 sm:px-6">
         <ChatBubble role="agent">
           <p className="font-semibold text-slate-950">I can handle approved refills, but I need a mandate match before checkout.</p>
-          <p className="mt-1 text-slate-600">Pick a request below and I will create a purchase intent, ask the T3N contract, then show the result.</p>
+          <p className="mt-1 text-slate-600">Tell me what you want done. I will map it to an agent action, create a purchase intent when needed, ask T3N, then show the result.</p>
         </ChatBubble>
+
+        {chatOnlyReply ? (
+          <>
+            <ChatBubble role="user">
+              <p>{chatOnlyReply.userMessage}</p>
+            </ChatBubble>
+            <ChatBubble role="agent">
+              <p>{chatOnlyReply.assistantMessage}</p>
+            </ChatBubble>
+          </>
+        ) : null}
 
         {result ? (
           <>
             <ChatBubble role="user">
-              <p>{scenarios.find((scenario) => scenario.id === result.scenario)?.prompt}</p>
+              <p>{result.userMessage ?? scenarios.find((scenario) => scenario.id === result.scenario)?.prompt}</p>
             </ChatBubble>
             <AgentResultMessage result={result} />
           </>
         ) : null}
+
+        {chatError ? (
+          <ChatBubble role="agent">
+            <p className="font-semibold text-rose-700">Could not run the LLM orchestrator</p>
+            <p className="mt-1 text-slate-600">{chatError}</p>
+          </ChatBubble>
+        ) : null}
       </div>
 
-      <div className="border-t border-slate-200 bg-white p-4 sm:p-5">
+      <div className="shrink-0 border-t border-slate-200 bg-white p-4 sm:p-5">
         <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
           {scenarios.map((scenario) => (
             <button
@@ -334,13 +387,27 @@ function ChatWorkspace({
           ))}
         </div>
         <div className="flex items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
-          <div className="min-h-11 flex-1 px-3 py-2 text-sm leading-6 text-slate-700">{selectedPrompt}</div>
+          <textarea
+            aria-label="Agent request"
+            className="min-h-11 flex-1 resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-700 outline-none placeholder:text-slate-400"
+            disabled={running !== null}
+            onChange={(event) => setChatInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                runChat();
+              }
+            }}
+            placeholder="Ask the refill agent what to do..."
+            rows={2}
+            value={chatInput}
+          />
           <button
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:bg-slate-300"
-            disabled={running !== null}
-            onClick={runScenario}
+            disabled={running !== null || chatInput.trim().length === 0}
+            onClick={runChat}
             type="button"
-            aria-label="Run selected scenario"
+            aria-label="Send agent request"
           >
             {running ? <RefreshCcw className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           </button>
@@ -368,6 +435,16 @@ function AgentResultMessage({ result }: { result: AgentRunResult }) {
         </div>
       </div>
 
+      {result.orchestration ? (
+        <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900">
+          <p className="font-semibold">{result.orchestration.userFacingReply}</p>
+          <p className="mt-1 text-emerald-800">
+            LLM routed this as {scenarios.find((scenario) => scenario.id === result.orchestration?.scenario)?.label ?? result.orchestration.scenario} with{" "}
+            {Math.round(result.orchestration.confidence * 100)}% confidence.
+          </p>
+        </div>
+      ) : null}
+
       {result.purchaseIntent ? (
         <div className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
           <MiniFact icon={<ShoppingCart className="h-4 w-4" />} label="Item" value={result.purchaseIntent.productName} />
@@ -385,7 +462,7 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
   const total = auth?.checks.length ?? 0;
 
   return (
-    <aside className="hidden min-h-screen flex-col gap-4 bg-slate-50 p-4 lg:order-3 lg:flex">
+    <aside className="hidden flex-col gap-4 overflow-auto bg-slate-50 p-4 lg:order-3 lg:flex lg:h-screen">
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">

@@ -2,12 +2,13 @@
 
 ## Current product
 
-RefillGuard is a Terminal 3/T3N-backed recurring purchase authorization prototype. The app lets a user delegate a constrained refill mandate to an agent. The agent proposes a purchase intent, and the T3N contract evaluates the intent against the user mandate without exposing sealed payment, address, or phone references to the agent.
+RefillGuard is a Terminal 3/T3N-backed recurring purchase authorization prototype. The app lets a user delegate a constrained refill mandate to an agent. A server-side OpenAI LLM maps free-form chat text to an allowed agent action. The agent then proposes a purchase intent, and the T3N contract evaluates the intent against the user mandate without exposing sealed payment, address, or phone references to the agent.
 
 ## Main parts
 
 - `src/app/page.tsx`: interactive refill dashboard and authorization UI.
-- `src/app/api/*`: API routes for mandates, inventory, products, audit, and agent runs.
+- `src/app/api/*`: API routes for mandates, inventory, products, audit, direct agent runs, and LLM-orchestrated chat runs.
+- `src/lib/llm-orchestrator.ts`: OpenAI-backed action selection for chat requests.
 - `src/lib/policy.ts`: local policy validation logic used by demo mode and mirrored by the contract.
 - `src/lib/t3n-live.ts`: live T3N invocation adapter.
 - `contracts/refillguard-auth`: Rust/WASM TEE contract exporting `authorize-purchase`.

@@ -136,6 +136,7 @@ export type AuditLogEntry = {
   eventType:
     | "mandate_created"
     | "stock_updated"
+    | "llm_orchestrated"
     | "refill_not_needed"
     | "refill_needed"
     | "purchase_intent_created"
@@ -159,6 +160,14 @@ export type DemoScenario =
 
 export type AgentRunResult = {
   scenario: DemoScenario;
+  userMessage?: string;
+  orchestration?: {
+    model: string;
+    scenario: DemoScenario;
+    confidence: number;
+    rationale: string;
+    userFacingReply: string;
+  };
   refillNeeded: boolean;
   refillReason: string;
   candidates: MerchantProduct[];
