@@ -1,0 +1,43 @@
+{
+  "name": "refillguard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "t3n:whoami": "node scripts/t3n/whoami.mjs",
+    "t3n:agent": "node scripts/t3n/ensure-agent.mjs",
+    "t3n:claim-agent": "node scripts/t3n/claim-agent.mjs",
+    "t3n:delegate": "node scripts/t3n/delegate-agent.mjs",
+    "t3n:build-contract": "PATH=/opt/homebrew/opt/rustup/bin:$PATH cargo +stable build --manifest-path contracts/refillguard-auth/Cargo.toml --target wasm32-wasip2 --release",
+    "t3n:register": "node scripts/t3n/register-contract.mjs",
+    "t3n:invoke": "node scripts/t3n/invoke-refillguard.mjs"
+  },
+  "dependencies": {
+    "@terminal3/t3n-sdk": "^3.8.0",
+    "dotenv": "^17.4.2",
+    "lucide-react": "^0.468.0",
+    "next": "^16.2.9",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^16.2.9",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  }
+}
