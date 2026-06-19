@@ -7,6 +7,7 @@ import {
   Check,
   ClipboardList,
   FileCheck2,
+  GitBranch,
   History,
   LockKeyhole,
   MessageSquare,
@@ -418,6 +419,7 @@ function ChatWorkspace({
 }
 
 function AgentResultMessage({ result }: { result: AgentRunResult }) {
+  const [detailView, setDetailView] = useState<"summary" | "flow" | "terminal">("summary");
   const auth = result.authorizationResult;
   const approved = auth.status === "approved";
   const manual = auth.status === "manual_review";
@@ -435,6 +437,41 @@ function AgentResultMessage({ result }: { result: AgentRunResult }) {
         </div>
       </div>
 
+      <div className="mt-4 flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+        {(["summary", "flow", "terminal"] as const).map((view) => (
+          <button
+            className={`h-8 flex-1 rounded-md px-3 text-xs font-semibold capitalize transition ${
+              detailView === view ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-900"
+            }`}
+            key={view}
+            onClick={() => setDetailView(view)}
+            type="button"
+          >
+            {view}
+          </button>
+        ))}
+      </div>
+
+      {detailView === "summary" ? (
+        <AgentSummary result={result} />
+      ) : detailView === "flow" ? (
+        <AgentFlowchart result={result} />
+      ) : (
+        <div className="mt-4">
+          <AgentTerminal result={result} compact />
+        </div>
+      )}
+
+      <div className="mt-4 hidden lg:block">
+        <p className="text-xs text-slate-500">Full terminal trace is also available in the right inspector.</p>
+      </div>
+    </ChatBubble>
+  );
+}
+
+function AgentSummary({ result }: { result: AgentRunResult }) {
+  return (
+    <>
       {result.orchestration ? (
         <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900">
           <p className="font-semibold">{result.orchestration.userFacingReply}</p>
@@ -452,11 +489,50 @@ function AgentResultMessage({ result }: { result: AgentRunResult }) {
           <MiniFact icon={<ShieldCheck className="h-4 w-4" />} label="Price" value={money.format(result.purchaseIntent.priceSgd)} />
         </div>
       ) : null}
+    </>
+  );
+}
 
-      <div className="mt-4 lg:hidden">
-        <AgentTerminal result={result} compact />
+function AgentFlowchart({ result }: { result: AgentRunResult }) {
+  const nodes = buildFlowNodes(result);
+
+  return (
+    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <GitBranch className="h-4 w-4 text-emerald-700" />
+          Task flow
+        </div>
+        <span className={`rounded-md px-2 py-1 text-xs font-semibold ${flowOutcomeClass(result.authorizationResult.status)}`}>
+          {statusLabel(result.authorizationResult.status)}
+        </span>
       </div>
-    </ChatBubble>
+
+      <div className="relative grid gap-3">
+        {nodes.map((node, index) => (
+          <div className="relative grid grid-cols-[32px_1fr] gap-3" key={node.id}>
+            <div className="relative flex justify-center">
+              {index < nodes.length - 1 ? <span className={`absolute left-1/2 top-8 h-[calc(100%+0.75rem)] w-px -translate-x-1/2 ${flowConnectorClass(node.status)}`} /> : null}
+              <span className={`z-10 flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold ${flowNodeClass(node.status)}`}>
+                {index + 1}
+              </span>
+            </div>
+            <div className={`min-w-0 rounded-lg border bg-white px-3 py-2 ${flowCardClass(node.status)}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-950">{node.title}</p>
+                  <p className="mt-0.5 break-words text-xs leading-5 text-slate-600">{node.detail}</p>
+                </div>
+                <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold uppercase ${flowBadgeClass(node.status)}`}>
+                  {node.status}
+                </span>
+              </div>
+              {node.meta ? <p className="mt-2 break-words font-mono text-[10px] leading-4 text-slate-400">{node.meta}</p> : null}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -581,6 +657,60 @@ function TerminalLine({ entry }: { entry: AgentTraceEntry }) {
       {metadata ? <div className="break-words pl-0 text-slate-500 sm:pl-[4.9rem]">{metadata}</div> : null}
     </div>
   );
+}
+
+type FlowNode = {
+  id: string;
+  title: string;
+  detail: string;
+  status: AgentTraceEntry["status"];
+  meta?: string;
+};
+
+function buildFlowNodes(result: AgentRunResult): FlowNode[] {
+  const baseNodes = result.trace.map((entry) => ({
+    id: entry.id,
+    title: flowTitle(entry),
+    detail: entry.detail,
+    status: entry.status,
+    meta: flowMetadata(entry)
+  }));
+
+  if (baseNodes.length > 0) return baseNodes;
+
+  return [
+    {
+      id: "empty",
+      title: "No task executed",
+      detail: "The agent did not run an actionable flow for this message.",
+      status: "skipped"
+    }
+  ];
+}
+
+function flowTitle(entry: AgentTraceEntry) {
+  const titles: Record<string, string> = {
+    "llm.route_request": "Understand request",
+    "agent.load_mandate": "Load delegation mandate",
+    "agent.scan_inventory": "Check refill trigger",
+    "agent.filter_catalog": "Filter merchant catalog",
+    "agent.select_product": "Choose candidate item",
+    "agent.create_intent": "Create purchase intent",
+    "policy.precheck": "Run local policy checks",
+    "t3n.authorize_purchase": "Ask T3N for authorization",
+    "merchant.checkout": "Call merchant checkout",
+    "agent.stop": "Stop without purchase"
+  };
+
+  return titles[entry.command] ?? entry.command.replaceAll("_", " ").replaceAll(".", " / ");
+}
+
+function flowMetadata(entry: AgentTraceEntry) {
+  if (!entry.metadata) return undefined;
+  return Object.entries(entry.metadata)
+    .slice(0, 4)
+    .map(([key, value]) => `${key}: ${String(value)}`)
+    .join("  ");
 }
 
 function MandatesPage({ inventory, mandates }: { inventory: InventoryItem[]; mandates: RefillMandate[] }) {
@@ -741,6 +871,45 @@ function traceStatusClass(status: AgentTraceEntry["status"]) {
   if (status === "skipped") return "text-slate-500";
   if (status === "running") return "text-sky-300";
   return "text-slate-400";
+}
+
+function flowNodeClass(status: AgentTraceEntry["status"]) {
+  if (status === "ok") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "blocked") return "border-rose-200 bg-rose-50 text-rose-700";
+  if (status === "review") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (status === "skipped") return "border-slate-200 bg-slate-100 text-slate-500";
+  if (status === "running") return "border-sky-200 bg-sky-50 text-sky-700";
+  return "border-slate-200 bg-white text-slate-600";
+}
+
+function flowCardClass(status: AgentTraceEntry["status"]) {
+  if (status === "blocked") return "border-rose-200";
+  if (status === "review") return "border-amber-200";
+  if (status === "ok") return "border-emerald-100";
+  return "border-slate-200";
+}
+
+function flowBadgeClass(status: AgentTraceEntry["status"]) {
+  if (status === "ok") return "bg-emerald-50 text-emerald-700";
+  if (status === "blocked") return "bg-rose-50 text-rose-700";
+  if (status === "review") return "bg-amber-50 text-amber-700";
+  if (status === "skipped") return "bg-slate-100 text-slate-500";
+  if (status === "running") return "bg-sky-50 text-sky-700";
+  return "bg-slate-100 text-slate-600";
+}
+
+function flowConnectorClass(status: AgentTraceEntry["status"]) {
+  if (status === "blocked") return "bg-rose-200";
+  if (status === "review") return "bg-amber-200";
+  if (status === "ok") return "bg-emerald-200";
+  return "bg-slate-200";
+}
+
+function flowOutcomeClass(status: AgentRunResult["authorizationResult"]["status"]) {
+  if (status === "approved") return "bg-emerald-50 text-emerald-700";
+  if (status === "manual_review") return "bg-amber-50 text-amber-700";
+  if (status === "blocked") return "bg-rose-50 text-rose-700";
+  return "bg-slate-100 text-slate-600";
 }
 
 function statusLabel(status: AgentRunResult["authorizationResult"]["status"]) {
