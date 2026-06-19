@@ -158,6 +158,16 @@ export type DemoScenario =
   | "regulated_item"
   | "pet_food_success";
 
+export type AgentTraceEntry = {
+  id: string;
+  at: string;
+  actor: "llm" | "agent" | "policy" | "t3n" | "merchant" | "system";
+  status: "queued" | "running" | "ok" | "blocked" | "review" | "skipped";
+  command: string;
+  detail: string;
+  metadata?: Record<string, string | number | boolean>;
+};
+
 export type AgentRunResult = {
   scenario: DemoScenario;
   userMessage?: string;
@@ -175,4 +185,5 @@ export type AgentRunResult = {
   purchaseIntent: PurchaseIntent | null;
   policyPrecheck: { approved: boolean; checks: PolicyCheck[] };
   authorizationResult: AuthorizationResult;
+  trace: AgentTraceEntry[];
 };

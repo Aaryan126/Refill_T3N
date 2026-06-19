@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orchestrateAgentRequest } from "@/lib/llm-orchestrator";
 import { runAgentScenario } from "@/lib/runner";
 import { addAudit, getStore } from "@/lib/store";
+import type { AgentTraceEntry } from "@/lib/types";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -47,11 +48,24 @@ export async function POST(request: Request) {
     const result = await runAgentScenario({
       scenario: orchestration.scenario
     });
+    const routeTrace: AgentTraceEntry = {
+      id: `trace_llm_${Date.now()}`,
+      at: new Date().toISOString(),
+      actor: "llm",
+      status: "ok",
+      command: "llm.route_request",
+      detail: `Mapped request to ${orchestration.scenario} with ${Math.round(orchestration.confidence * 100)}% confidence.`,
+      metadata: {
+        model: orchestration.model,
+        confidence: Math.round(orchestration.confidence * 100)
+      }
+    };
 
     return NextResponse.json({
       ...result,
       userMessage: message,
-      orchestration
+      orchestration,
+      trace: [routeTrace, ...result.trace]
     });
   } catch (error) {
     return NextResponse.json(

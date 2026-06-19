@@ -3,7 +3,6 @@
 import {
   AlertTriangle,
   Archive,
-  BadgeCheck,
   Bot,
   Check,
   ClipboardList,
@@ -14,16 +13,17 @@ import {
   RefreshCcw,
   Search,
   Send,
-  Settings2,
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
+  SquareTerminal,
   User,
   X
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type {
   AgentRunResult,
+  AgentTraceEntry,
   AuditLogEntry,
   DemoScenario,
   InventoryItem,
@@ -452,6 +452,10 @@ function AgentResultMessage({ result }: { result: AgentRunResult }) {
           <MiniFact icon={<ShieldCheck className="h-4 w-4" />} label="Price" value={money.format(result.purchaseIntent.priceSgd)} />
         </div>
       ) : null}
+
+      <div className="mt-4 lg:hidden">
+        <AgentTerminal result={result} compact />
+      </div>
     </ChatBubble>
   );
 }
@@ -463,6 +467,8 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
 
   return (
     <aside className="hidden flex-col gap-4 overflow-auto bg-slate-50 p-4 lg:order-3 lg:flex lg:h-screen">
+      <AgentTerminal result={result} />
+
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
@@ -519,6 +525,61 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
         </div>
       </section>
     </aside>
+  );
+}
+
+function AgentTerminal({ compact = false, result }: { compact?: boolean; result: AgentRunResult | null }) {
+  const trace = result?.trace ?? [];
+  const visibleTrace = compact ? trace.slice(-5) : trace;
+
+  return (
+    <section className={`${compact ? "" : "rounded-lg border border-slate-200 bg-white p-4"}`}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+          <SquareTerminal className="h-4 w-4 text-emerald-700" />
+          Agent terminal
+        </div>
+        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{trace.length ? `${trace.length} steps` : "idle"}</span>
+      </div>
+
+      <div className={`overflow-auto rounded-lg bg-slate-950 p-3 font-mono text-[11px] leading-5 text-slate-200 shadow-inner ${compact ? "max-h-56" : "max-h-[420px]"}`}>
+        {!trace.length ? (
+          <div className="text-slate-400">
+            <span className="text-emerald-300">$</span> waiting for an agent task
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {visibleTrace.map((entry) => (
+              <TerminalLine entry={entry} key={entry.id} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function TerminalLine({ entry }: { entry: AgentTraceEntry }) {
+  const metadata = entry.metadata
+    ? Object.entries(entry.metadata)
+        .map(([key, value]) => `${key}=${String(value)}`)
+        .join(" ")
+    : "";
+
+  return (
+    <div className="min-w-0">
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="shrink-0 text-slate-500">{new Date(entry.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+        <span className={`shrink-0 ${traceActorClass(entry.actor)}`}>{entry.actor}</span>
+        <span className={`shrink-0 ${traceStatusClass(entry.status)}`}>{entry.status}</span>
+      </div>
+      <div className="min-w-0 pl-0 sm:pl-[4.9rem]">
+        <span className="text-sky-300">{entry.command}</span>
+        <span className="text-slate-500"> :: </span>
+        <span className="break-words text-slate-100">{entry.detail}</span>
+      </div>
+      {metadata ? <div className="break-words pl-0 text-slate-500 sm:pl-[4.9rem]">{metadata}</div> : null}
+    </div>
   );
 }
 
@@ -662,6 +723,24 @@ function scenarioChipClass(tone: "run" | "block" | "neutral", active: boolean) {
   if (tone === "run") return "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100";
   if (tone === "block") return "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100";
   return "border-slate-200 bg-white text-slate-600 hover:bg-slate-100";
+}
+
+function traceActorClass(actor: AgentTraceEntry["actor"]) {
+  if (actor === "llm") return "text-violet-300";
+  if (actor === "policy") return "text-amber-300";
+  if (actor === "t3n") return "text-emerald-300";
+  if (actor === "merchant") return "text-cyan-300";
+  if (actor === "system") return "text-slate-300";
+  return "text-sky-300";
+}
+
+function traceStatusClass(status: AgentTraceEntry["status"]) {
+  if (status === "ok") return "text-emerald-300";
+  if (status === "blocked") return "text-rose-300";
+  if (status === "review") return "text-amber-300";
+  if (status === "skipped") return "text-slate-500";
+  if (status === "running") return "text-sky-300";
+  return "text-slate-400";
 }
 
 function statusLabel(status: AgentRunResult["authorizationResult"]["status"]) {
