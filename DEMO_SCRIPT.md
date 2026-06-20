@@ -8,6 +8,12 @@ RefillGuard is a bounded autonomous refill agent for health-adjacent and pet ess
 
 ## 2. Show T3N Setup
 
+Start on **Agent chat** for one second and point to the top status badges.
+
+Say:
+
+> Before any action, the app shows the Terminal 3 mode, the authorization contract, the invocation actor, and that secrets exposed is zero.
+
 Open **T3N setup**.
 
 Say:
@@ -39,7 +45,7 @@ After the result appears, show:
 
 Say:
 
-> The agent sees product and merchant data. Terminal 3 resolves the sealed payment and delivery references. The merchant receives only a sanitized checkout payload.
+> This card is the key result: Terminal 3 explains why the action was approved, confirms zero secrets were exposed, and shows whether checkout was called. The agent sees product and merchant data. Terminal 3 resolves the sealed payment and delivery references. The merchant receives only a sanitized checkout payload.
 
 ## 4. Show Consent-Gated Flow
 
@@ -79,6 +85,8 @@ Say:
 > Every important action is recorded. The audit entries include actor, decision, execution metadata, and hash-chain fields so the action history is reviewable.
 
 ## Workflow Diagram
+
+Use this diagram in the video before or after the live app walkthrough if you want to slow down the explanation without making the product itself feel slow.
 
 ```mermaid
 flowchart TD
