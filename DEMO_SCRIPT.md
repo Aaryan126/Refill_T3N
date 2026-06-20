@@ -1,6 +1,6 @@
 # RefillGuard Demo Script
 
-Target length: 2-3 minutes. Use this as a voiceover script. Keep the screen recording moving, but let the narration explain what just happened.
+Target length: under 4 minutes. Use this as a voiceover script. Keep the screen recording moving, and do not read the optional backup lines unless you have spare time.
 
 Live app: `https://refill-t3n.vercel.app`
 
@@ -20,9 +20,9 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover:**
 
-> This is RefillGuard, an autonomous refill agent for recurring purchases. In this demo, I use contact lens solution, pet food, and allergy tablets as concrete examples, but the same pattern can apply to many repeat purchases with clear user mandates. The goal is not to make a generic shopping bot. The goal is to show how Terminal 3 lets an AI agent act and transact for a user, while keeping identity, authorization, sensitive data, and auditability outside the agent's control.
+> This is RefillGuard, an autonomous refill agent for recurring purchases. I am using contact lens solution, pet food, and allergy tablets as examples, but the pattern works for many repeat purchases with clear user mandates.
 
-> At the top, the app shows the Terminal 3 mode, the authorization contract, the invocation actor, and the most important security signal: secrets exposed to the agent is zero.
+> The key idea is simple: the agent can prepare a transaction, but Terminal 3 controls identity, authorization, sensitive data, and auditability. At the top, notice the contract, invocation actor, and secrets exposed: zero.
 
 ## Scene 2: Trust Boundary
 
@@ -32,11 +32,9 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover:**
 
-> This is the trust boundary. The user has a Terminal 3 identity. The agent has its own identity. The user delegates only a specific purchase authority to the agent.
+> This is the trust boundary. The user has an identity, the agent has an identity, and the user delegates only specific purchase authority.
 
-> The agent does not receive a credit card number, address, phone number, or private credential. Instead, it receives sealed Terminal 3 references, like payment default card, home address, and primary phone.
-
-> The contract is `authorize-purchase`. Before checkout, Terminal 3 checks the user's identity, the agent's identity, the delegation scope, the allowed merchant, the approved SKU, the budget, the quantity, delivery constraints, sealed fields, and audit logging.
+> The agent never sees a raw card, address, phone number, or credential. It only sees sealed Terminal 3 references. Before checkout, the `authorize-purchase` contract checks identity, scope, merchant, SKU, budget, quantity, delivery, sealed fields, and audit logging.
 
 ## Scene 3: Approved Autonomous Refill
 
@@ -46,27 +44,27 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover while result is loading or immediately after clicking:**
 
-> Now I will run the happy path. The user asks the agent to refill contact lens solution. The agent can inspect inventory, compare approved products, and create a purchase intent.
+> Now I will run the happy path. The user asks for a contact lens solution refill. The agent checks inventory, compares approved products, and creates a purchase intent.
 
-> But the agent still cannot checkout by itself. Checkout only happens after Terminal 3 authorizes the intent.
+> But it still cannot checkout. Checkout only happens after Terminal 3 authorizes the intent.
 
 **On screen after result appears:** Keep **Why Terminal 3 mattered** visible.
 
 **Voiceover:**
 
-> This result card explains why Terminal 3 mattered. The purchase was approved because the mandate matched, the merchant was delegated, the SKU was approved, the price was under budget, the quantity was within the user's limit, and zero secrets were exposed.
+> This card explains the result: mandate matched, merchant delegated, SKU approved, price and quantity within limits, checkout called, and secrets exposed remained zero.
 
 **On screen:** Scroll or move to **Agent vs T3N** if needed.
 
 **Voiceover:**
 
-> This is the key separation. The agent sees normal commerce data: product, merchant, SKU, price, and quantity. Terminal 3 resolves the sensitive references inside the protected boundary.
+> The split is visible here. The agent sees product and merchant data. Terminal 3 resolves sensitive payment and delivery references.
 
 **On screen:** Show **Merchant receipt**.
 
 **Voiceover:**
 
-> The merchant receives a sanitized checkout payload. It gets placeholders for payment, address, and phone. The raw card and private user details never appear in the agent trace.
+> The merchant receives only a sanitized checkout payload, so raw private details never appear in the agent trace.
 
 ## Scene 4: Consent-Gated Flow
 
@@ -76,19 +74,19 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover while result appears:**
 
-> Some mandates can require explicit confirmation. In this pet food example, the agent can prepare the purchase intent, but it pauses before Terminal 3 authorization.
+> Some mandates require explicit confirmation. For pet food, the agent prepares the intent, then pauses before Terminal 3 authorization.
 
 **On screen:** Show the consent card with approve/reject buttons.
 
 **Voiceover:**
 
-> This makes user control visible. The agent is not silently buying everything. The user must approve this category before the authorization flow continues.
+> This makes user control visible. The agent is not silently buying every category.
 
 **Action:** Click **Approve through T3N**.
 
 **Voiceover after approval:**
 
-> Once the user approves, the same Terminal 3 authorization path runs. Only after that approval can checkout be called.
+> After approval, the same Terminal 3 path runs, and only then can checkout happen.
 
 ## Scene 5: Prompt Injection Red Team
 
@@ -104,9 +102,9 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover:**
 
-> This is why Terminal 3 is central to the workflow. Even if the request reaches the agent, the authorization boundary does not trust the language model. Terminal 3 blocks execution because the merchant is outside the delegated scope.
+> This is why Terminal 3 is central. The authorization boundary does not trust the language model. It blocks execution because the merchant is outside the delegated scope.
 
-> The important result is that checkout is not called, secrets exposed is still zero, and the blocked action is still audited.
+> Checkout is not called, secrets exposed is still zero, and the blocked action is audited.
 
 ## Scene 6: Manual Review Boundary
 
@@ -116,9 +114,9 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover:**
 
-> The app also handles a regulated-item boundary. Allergy tablets are treated differently from routine refills. The agent can identify the request, but it routes the action to manual review instead of autonomous checkout.
+> Allergy tablets show a manual-review boundary. The agent can identify the request, but it does not autonomously checkout regulated items.
 
-> This helps show the solution is not just approve or deny. Terminal 3-backed workflows can encode governance rules for when an agent must stop and escalate.
+> This shows the workflow can approve, block, or escalate depending on the user's mandate and risk rules.
 
 ## Scene 7: Audit Trail
 
@@ -128,19 +126,19 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover:**
 
-> Finally, every important action is recorded. The audit log captures the actor, decision, execution metadata, sealed-field usage, and hash-chain fields.
+> Finally, every important action is recorded. The audit log captures actor, decision, execution metadata, sealed-field usage, and hash-chain fields.
 
-> This gives the user and reviewer a concrete answer to what happened, who initiated it, whether Terminal 3 approved it, whether checkout was called, and whether any private data leaked.
+> So a reviewer can see what happened, whether Terminal 3 approved it, whether checkout was called, and whether private data leaked.
 
 ## Scene 8: Workflow Diagram
 
-**On screen:** Open `DEMO_SCRIPT.md` or `HACKATHON_UPDATES.md` in GitHub or your editor and show the Mermaid workflow diagram below. If you do not want to show files in the video, skip this scene and use the narration as closing context.
+**On screen:** Optional. Open `DEMO_SCRIPT.md` or `HACKATHON_UPDATES.md` in GitHub or your editor and show the Mermaid workflow diagram below. Skip this scene if the video is already close to 4 minutes.
 
 **Voiceover:**
 
-> The full workflow is: user request, agent reasoning, mandate lookup, inventory check, purchase intent, optional user consent, Terminal 3 authorization, sealed data substitution, merchant checkout, and audit receipt.
+> The workflow is: user request, agent reasoning, mandate lookup, intent creation, optional consent, Terminal 3 authorization, sealed data substitution, merchant checkout, and audit.
 
-> The agent is useful because it can reason and prepare the task. Terminal 3 is essential because it decides whether the task is authorized and protects the user's sensitive data.
+> The agent prepares the task. Terminal 3 decides whether it is authorized and protects the user's sensitive data.
 
 ```mermaid
 flowchart TD
@@ -176,7 +174,7 @@ flowchart TD
 
 **Voiceover:**
 
-> RefillGuard demonstrates bounded autonomy. The agent can understand the user's request and prepare a transaction, but Terminal 3 owns the identity, delegation, sensitive data handling, authorization decision, execution boundary, and audit trail.
+> RefillGuard demonstrates bounded autonomy. The agent understands the request and prepares the transaction, but Terminal 3 owns identity, delegation, sensitive data handling, authorization, execution boundaries, and audit.
 
 > That is the core idea: useful agentic commerce, without handing the agent raw secrets or unlimited spending power.
 
