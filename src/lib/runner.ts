@@ -9,13 +9,14 @@ import {
 } from "./agent";
 import { checkoutWithMerchant } from "./merchant";
 import { validatePurchaseIntent } from "./policy";
-import { addAudit, getStore } from "./store";
+import { addAudit, addPendingConsent, getStore, getT3nRuntimeStatus, resolvePendingConsent } from "./store";
 import { authorizePurchase } from "./t3n";
-import type { AgentRunResult, AgentTraceEntry, DemoScenario } from "./types";
+import type { AgentRunResult, AgentTraceEntry, DemoScenario, PendingConsent } from "./types";
 
 export async function runAgentScenario(params: {
   mandateId?: string;
   scenario: DemoScenario;
+  consentApproved?: boolean;
 }): Promise<AgentRunResult> {
   const store = getStore();
   const trace: AgentTraceEntry[] = [];
@@ -127,7 +128,8 @@ export async function runAgentScenario(params: {
       purchaseIntent: null,
       policyPrecheck: { approved: false, checks: [] },
       authorizationResult,
-      trace
+      trace,
+      trustStatus: getT3nRuntimeStatus()
     };
   }
 
@@ -196,6 +198,70 @@ export async function runAgentScenario(params: {
       total: policyPrecheck.checks.length
     }
   });
+
+  if (mandate.requiresUserConfirmation && !policyPrecheck.manualReview && !params.consentApproved) {
+    const pendingConsent = addPendingConsent({
+      scenario: params.scenario,
+      mandateId: mandate.id,
+      purchaseIntent,
+      product,
+      reason: "This mandate requires explicit user confirmation before Terminal 3 authorization."
+    });
+    const authorizationResult = {
+      id: `auth_pending_${Date.now()}`,
+      purchaseIntentId: purchaseIntent.id,
+      approved: false,
+      status: "pending_user_approval" as const,
+      checks: policyPrecheck.checks,
+      blockedReason: "Waiting for user approval before asking Terminal 3.",
+      sealedFieldsUsed: [
+        mandate.sensitiveFieldRefs.paymentMethodRef,
+        mandate.sensitiveFieldRefs.addressRef,
+        mandate.sensitiveFieldRefs.phoneRef
+      ],
+      rawSecretsExposedToAgent: false as const,
+      createdAt: new Date().toISOString()
+    };
+    pushTrace({
+      actor: "user",
+      status: "queued",
+      command: "user.consent_required",
+      detail: "Mandate requires confirmation, so the purchase intent is pending user approval before T3N is called.",
+      metadata: {
+        consentId: pendingConsent.id
+      }
+    });
+    addAudit({
+      actorType: "user",
+      actorId: store.user.id,
+      eventType: "user_consent_requested",
+      title: "User approval requested",
+      decision: "pending_user_approval",
+      details: {
+        consentId: pendingConsent.id,
+        purchaseIntentId: purchaseIntent.id,
+        mandateId: mandate.id
+      }
+    });
+
+    return {
+      scenario: params.scenario,
+      refillNeeded,
+      refillReason,
+      candidates,
+      rejectedCandidates,
+      purchaseIntent,
+      policyPrecheck: {
+        approved: policyPrecheck.approved,
+        checks: policyPrecheck.checks
+      },
+      authorizationResult,
+      trace,
+      pendingConsent,
+      trustStatus: getT3nRuntimeStatus()
+    };
+  }
+
   const authorizationResult = await authorizePurchase({
     userId: store.user.id,
     agentId: store.agent.id,
@@ -242,7 +308,9 @@ export async function runAgentScenario(params: {
       executionId: authorizationResult.t3nExecutionId,
       reason: authorizationResult.blockedReason,
       sealedFieldsUsed: authorizationResult.sealedFieldsUsed
-    }
+    },
+    decision: authorizationResult.status,
+    executionId: authorizationResult.t3nExecutionId
   });
 
   if (authorizationResult.approved) {
@@ -267,7 +335,9 @@ export async function runAgentScenario(params: {
         orderId: order.orderId,
         merchant: product.merchantName,
         sealedPayload: order.payload
-      }
+      },
+      decision: authorizationResult.status,
+      executionId: authorizationResult.t3nExecutionId
     });
   } else {
     pushTrace({
@@ -290,8 +360,60 @@ export async function runAgentScenario(params: {
       checks: policyPrecheck.checks
     },
     authorizationResult,
-    trace
+    trace,
+    trustStatus: getT3nRuntimeStatus()
   };
+}
+
+export async function approvePendingConsent(consentId: string): Promise<AgentRunResult> {
+  const pending = resolvePendingConsent(consentId, "approved");
+  if (!pending) {
+    throw new Error(`Pending consent not found: ${consentId}`);
+  }
+
+  addAudit({
+    actorType: "user",
+    actorId: getStore().user.id,
+    eventType: "user_consent_approved",
+    title: "User approved pending intent",
+    decision: "approved",
+    details: {
+      consentId,
+      purchaseIntentId: pending.purchaseIntent.id
+    }
+  });
+
+  const result = await runAgentScenario({
+    mandateId: pending.mandateId,
+    scenario: pending.scenario,
+    consentApproved: true
+  });
+
+  return {
+    ...result,
+    pendingConsent: pending
+  };
+}
+
+export function rejectPendingConsent(consentId: string): PendingConsent {
+  const pending = resolvePendingConsent(consentId, "rejected");
+  if (!pending) {
+    throw new Error(`Pending consent not found: ${consentId}`);
+  }
+
+  addAudit({
+    actorType: "user",
+    actorId: getStore().user.id,
+    eventType: "user_consent_rejected",
+    title: "User rejected pending intent",
+    decision: "user_rejected",
+    details: {
+      consentId,
+      purchaseIntentId: pending.purchaseIntent.id
+    }
+  });
+
+  return pending;
 }
 
 const money = new Intl.NumberFormat("en-SG", {

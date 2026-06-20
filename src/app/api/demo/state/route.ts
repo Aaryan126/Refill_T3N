@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStore } from "@/lib/store";
+import { getStore, getT3nRuntimeStatus } from "@/lib/store";
 
 export async function GET() {
   const store = getStore();
@@ -9,6 +9,8 @@ export async function GET() {
     mandates: store.mandates,
     inventory: store.inventory,
     products: store.products,
-    audit: store.audit
+    audit: store.audit,
+    pendingConsents: store.pendingConsents,
+    trustStatus: getT3nRuntimeStatus()
   });
 }

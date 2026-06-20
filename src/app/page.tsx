@@ -23,23 +23,31 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type {
+  AgentIdentity,
   AgentRunResult,
   AgentTraceEntry,
   AuditLogEntry,
   DemoScenario,
   InventoryItem,
   MerchantProduct,
-  RefillMandate
+  PendingConsent,
+  RefillMandate,
+  T3nRuntimeStatus,
+  User as AppUser
 } from "@/lib/types";
 
 type DemoState = {
+  user: AppUser;
+  agent: AgentIdentity;
   mandates: RefillMandate[];
   inventory: InventoryItem[];
   products: MerchantProduct[];
   audit: AuditLogEntry[];
+  pendingConsents: PendingConsent[];
+  trustStatus: T3nRuntimeStatus;
 };
 
-type View = "chat" | "mandates" | "audit";
+type View = "chat" | "trust" | "mandates" | "audit";
 type RunState = DemoScenario | "llm";
 type ChatOnlyReply = {
   userMessage: string;
@@ -143,6 +151,40 @@ export default function Home() {
     await refreshState();
   }
 
+  async function decideConsent(consentId: string, decision: "approve" | "reject") {
+    setRunning("llm");
+    const response = await fetch(`/api/consent/${consentId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ decision })
+    });
+    const body = await response.json();
+
+    if (response.ok && decision === "approve") {
+      setResult(body);
+      setChatOnlyReply(null);
+    } else if (response.ok) {
+      setResult((current) =>
+        current
+          ? {
+              ...current,
+              pendingConsent: body.pendingConsent,
+              authorizationResult: {
+                ...current.authorizationResult,
+                status: "user_rejected",
+                blockedReason: "User rejected the pending purchase intent."
+              }
+            }
+          : current
+      );
+    } else {
+      setChatError(body.error ?? "Consent update failed.");
+    }
+
+    await refreshState();
+    setRunning(null);
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
       <div className="mx-auto grid min-h-screen w-full max-w-[1680px] grid-cols-1 lg:h-screen lg:grid-cols-[280px_1fr_380px] lg:overflow-hidden">
@@ -159,7 +201,10 @@ export default function Home() {
               setChatInput={setChatInput}
               setSelectedScenario={selectScenarioShortcut}
               runChat={() => void runChat()}
+              decideConsent={(consentId, decision) => void decideConsent(consentId, decision)}
             />
+          ) : activeView === "trust" ? (
+            <TrustSetupPage state={state} />
           ) : activeView === "mandates" ? (
             <MandatesPage inventory={state?.inventory ?? []} mandates={visibleMandates} />
           ) : (
@@ -174,6 +219,7 @@ export default function Home() {
           onReset={() => void resetDemo()}
           onViewChange={setActiveView}
           stockValue={stockValue}
+          trustStatus={state?.trustStatus ?? null}
           updateStock={(value) => void updateStock(value)}
         />
 
@@ -190,6 +236,7 @@ function Sidebar({
   onReset,
   onViewChange,
   stockValue,
+  trustStatus,
   updateStock
 }: {
   activeView: View;
@@ -198,10 +245,12 @@ function Sidebar({
   onReset: () => void;
   onViewChange: (view: View) => void;
   stockValue: number;
+  trustStatus: T3nRuntimeStatus | null;
   updateStock: (value: number) => void;
 }) {
   const nav = [
     { id: "chat" as const, label: "Agent chat", icon: MessageSquare },
+    { id: "trust" as const, label: "T3N setup", icon: LockKeyhole },
     { id: "mandates" as const, label: "Mandates", icon: ClipboardList },
     { id: "audit" as const, label: "Audit", icon: History }
   ];
@@ -277,7 +326,8 @@ function Sidebar({
         <div className="grid gap-2">
           <StatusRow label="Mandates" value={loaded ? String(mandates.length) : "3"} />
           <StatusRow label="Secrets exposed" value="0" />
-          <StatusRow label="Agent mode" value="Self-call" />
+          <StatusRow label="Mode" value={trustStatus?.mode === "live" ? "Live T3N" : "Demo adapter"} />
+          <StatusRow label="Agent mode" value={trustStatus?.invocationActor === "separate_agent" ? "Separate DID" : "Self-call"} />
         </div>
       </section>
 
@@ -323,7 +373,8 @@ function ChatWorkspace({
   runChat,
   selectedScenario,
   setChatInput,
-  setSelectedScenario
+  setSelectedScenario,
+  decideConsent
 }: {
   chatError: string | null;
   chatInput: string;
@@ -334,6 +385,7 @@ function ChatWorkspace({
   selectedScenario: DemoScenario;
   setChatInput: (value: string) => void;
   setSelectedScenario: (scenario: DemoScenario) => void;
+  decideConsent: (consentId: string, decision: "approve" | "reject") => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -359,7 +411,7 @@ function ChatWorkspace({
             <ChatBubble role="user">
               <p>{result.userMessage ?? scenarios.find((scenario) => scenario.id === result.scenario)?.prompt}</p>
             </ChatBubble>
-            <AgentResultMessage result={result} />
+            <AgentResultMessage result={result} decideConsent={decideConsent} running={running !== null} />
           </>
         ) : null}
 
@@ -372,20 +424,19 @@ function ChatWorkspace({
       </div>
 
       <div className="shrink-0 border-t border-slate-200 bg-white p-4 sm:p-5">
-        <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-          {scenarios.map((scenario) => (
-            <button
-              className={`h-9 shrink-0 rounded-full border px-3 text-sm font-semibold transition ${scenarioChipClass(
-                scenario.tone,
-                selectedScenario === scenario.id
-              )}`}
-              key={scenario.id}
-              onClick={() => setSelectedScenario(scenario.id)}
-              type="button"
-            >
-              {scenario.label}
-            </button>
-          ))}
+        <div className="mb-3 grid gap-2">
+          <ScenarioRail
+            label="Approved paths"
+            scenarios={scenarios.filter((scenario) => scenario.tone !== "block")}
+            selectedScenario={selectedScenario}
+            setSelectedScenario={setSelectedScenario}
+          />
+          <ScenarioRail
+            label="Red-team attempts"
+            scenarios={scenarios.filter((scenario) => scenario.tone === "block")}
+            selectedScenario={selectedScenario}
+            setSelectedScenario={setSelectedScenario}
+          />
         </div>
         <div className="flex items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
           <textarea
@@ -418,12 +469,21 @@ function ChatWorkspace({
   );
 }
 
-function AgentResultMessage({ result }: { result: AgentRunResult }) {
+function AgentResultMessage({
+  decideConsent,
+  result,
+  running
+}: {
+  decideConsent: (consentId: string, decision: "approve" | "reject") => void;
+  result: AgentRunResult;
+  running: boolean;
+}) {
   const [detailView, setDetailView] = useState<"summary" | "flow" | "terminal">("summary");
   const auth = result.authorizationResult;
   const approved = auth.status === "approved";
   const manual = auth.status === "manual_review";
   const blocked = auth.status === "blocked";
+  const pending = auth.status === "pending_user_approval";
 
   return (
     <ChatBubble role="agent">
@@ -432,10 +492,42 @@ function AgentResultMessage({ result }: { result: AgentRunResult }) {
           {approved ? <Check className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-950">{approved ? "Approved and ready for checkout" : manual ? "Paused for manual review" : blocked ? "Blocked by mandate" : "No refill needed"}</p>
+          <p className="font-semibold text-slate-950">{approved ? "Approved and ready for checkout" : pending ? "Waiting for your approval" : manual ? "Paused for manual review" : blocked ? "Blocked by mandate" : auth.status === "user_rejected" ? "Rejected by user" : "No refill needed"}</p>
           <p className="mt-1 text-slate-600">{approved ? `T3N approved ${result.purchaseIntent?.productName ?? "the refill"}.` : auth.blockedReason ?? result.refillReason}</p>
         </div>
       </div>
+
+      {result.pendingConsent && auth.status === "pending_user_approval" ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <div className="flex items-start gap-3">
+            <LockKeyhole className="mt-0.5 h-4 w-4 text-amber-700" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-slate-950">User consent required before T3N authorization</p>
+              <p className="mt-1 text-xs leading-5 text-slate-700">
+                The agent has created an intent, but this mandate requires your approval before Terminal 3 can authorize or release sealed checkout references.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  className="h-9 rounded-md bg-emerald-600 px-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:bg-slate-300"
+                  disabled={running}
+                  onClick={() => decideConsent(result.pendingConsent!.id, "approve")}
+                  type="button"
+                >
+                  Approve through T3N
+                </button>
+                <button
+                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:text-slate-400"
+                  disabled={running}
+                  onClick={() => decideConsent(result.pendingConsent!.id, "reject")}
+                  type="button"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-4 flex rounded-lg border border-slate-200 bg-slate-50 p-1">
         {(["summary", "flow", "terminal"] as const).map((view) => (
@@ -466,6 +558,39 @@ function AgentResultMessage({ result }: { result: AgentRunResult }) {
         <p className="text-xs text-slate-500">Full terminal trace is also available in the right inspector.</p>
       </div>
     </ChatBubble>
+  );
+}
+
+function ScenarioRail({
+  label,
+  scenarios,
+  selectedScenario,
+  setSelectedScenario
+}: {
+  label: string;
+  scenarios: Array<{ id: DemoScenario; label: string; prompt: string; tone: "run" | "block" | "neutral" }>;
+  selectedScenario: DemoScenario;
+  setSelectedScenario: (scenario: DemoScenario) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-bold uppercase text-slate-400">{label}</p>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {scenarios.map((scenario) => (
+          <button
+            className={`h-9 shrink-0 rounded-full border px-3 text-sm font-semibold transition ${scenarioChipClass(
+              scenario.tone,
+              selectedScenario === scenario.id
+            )}`}
+            key={scenario.id}
+            onClick={() => setSelectedScenario(scenario.id)}
+            type="button"
+          >
+            {scenario.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -575,6 +700,9 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
         )}
       </section>
 
+      <AgentT3nBoundary result={result} />
+      <MerchantReceipt result={result} />
+
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
           <LockKeyhole className="h-4 w-4 text-emerald-700" />
@@ -601,6 +729,61 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
         </div>
       </section>
     </aside>
+  );
+}
+
+function AgentT3nBoundary({ result }: { result: AgentRunResult | null }) {
+  const intent = result?.purchaseIntent;
+  const auth = result?.authorizationResult;
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
+        <GitBranch className="h-4 w-4 text-emerald-700" />
+        Agent vs T3N
+      </div>
+      {!intent ? (
+        <EmptyBlock text="Run a purchase scenario to inspect the data boundary." />
+      ) : (
+        <div className="grid gap-3">
+          <div className="rounded-md border border-sky-100 bg-sky-50 p-3">
+            <p className="mb-2 text-xs font-bold uppercase text-sky-700">Agent sees</p>
+            <StatusRow label="Product" value={intent.productName} />
+            <StatusRow label="Merchant" value={intent.merchantName} />
+            <StatusRow label="SKU" value={intent.sku} />
+            <StatusRow label="Price" value={money.format(intent.priceSgd)} />
+          </div>
+          <div className="rounded-md border border-emerald-100 bg-emerald-50 p-3">
+            <p className="mb-2 text-xs font-bold uppercase text-emerald-700">T3N resolves</p>
+            {(auth?.sealedFieldsUsed.length ? auth.sealedFieldsUsed : ["t3n://payment/default_card", "t3n://address/home", "t3n://phone/primary"]).map((field) => (
+              <p className="mb-1 break-words font-mono text-xs text-emerald-900" key={field}>
+                {field}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MerchantReceipt({ result }: { result: AgentRunResult | null }) {
+  const payload = result?.authorizationResult.merchantCheckoutPayload;
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
+        <ShoppingCart className="h-4 w-4 text-emerald-700" />
+        Merchant receipt
+      </div>
+      {!payload ? (
+        <EmptyBlock text="Checkout payload appears only after T3N approval." />
+      ) : (
+        <pre className="max-h-56 overflow-auto rounded-md bg-slate-950 p-3 text-[11px] leading-5 text-slate-100">
+          {JSON.stringify(payload, null, 2)}
+        </pre>
+      )}
+    </section>
   );
 }
 
@@ -713,6 +896,94 @@ function flowMetadata(entry: AgentTraceEntry) {
     .join("  ");
 }
 
+function TrustSetupPage({ state }: { state: DemoState | null }) {
+  const trust = state?.trustStatus;
+  const user = state?.user;
+  const agent = state?.agent;
+  const sealedRefs = user?.sealedRefs
+    ? [
+        { label: "Payment method", value: user.sealedRefs.paymentMethodRef },
+        { label: "Delivery address", value: user.sealedRefs.addressRef },
+        { label: "Phone number", value: user.sealedRefs.phoneRef }
+      ]
+    : [];
+
+  return (
+    <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="mb-5 flex items-center gap-2">
+        <LockKeyhole className="h-5 w-5 text-emerald-700" />
+        <h2 className="text-xl font-semibold">T3N Trust Setup</h2>
+      </div>
+
+      {!state || !trust || !user || !agent ? (
+        <EmptyBlock text="Loading Terminal 3 trust setup." />
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <User className="h-4 w-4 text-emerald-700" />
+              Verified identities
+            </div>
+            <div className="grid gap-3">
+              <StatusRow label="Human" value={user.verified ? "Verified" : "Unverified"} />
+              <StatusRow label="Human DID" value={trust.userDid} />
+              <StatusRow label="Agent" value={agent.verified ? `${agent.name} verified` : `${agent.name} unverified`} />
+              <StatusRow label="Agent DID" value={trust.agentDid} />
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <ShieldCheck className="h-4 w-4 text-emerald-700" />
+              Runtime boundary
+            </div>
+            <div className="grid gap-3">
+              <StatusRow label="Mode" value={trust.mode === "live" ? "Live Terminal 3" : "Demo adapter"} />
+              <StatusRow label="Environment" value={trust.environment} />
+              <StatusRow label="Invocation actor" value={trust.invocationActor === "separate_agent" ? "Separate agent DID" : "User self-call"} />
+              <StatusRow label="Contract" value={trust.contractId ?? trust.contractName} />
+              <StatusRow label="Function" value={trust.functionName} />
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <LockKeyhole className="h-4 w-4 text-emerald-700" />
+              Sealed vault references
+            </div>
+            <div className="grid gap-2">
+              {sealedRefs.map((ref) => (
+                <div className="rounded-md bg-slate-50 px-3 py-2" key={ref.label}>
+                  <p className="text-xs font-semibold text-slate-500">{ref.label}</p>
+                  <p className="mt-1 break-words font-mono text-xs text-slate-800">{ref.value}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-500">The app stores only references. Raw card, address, phone, and CVV values are never present in agent prompts, intents, logs, or checkout payloads.</p>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <GitBranch className="h-4 w-4 text-emerald-700" />
+              Delegated outbound scope
+            </div>
+            <div className="grid gap-2">
+              {trust.allowedHosts.map((host) => (
+                <div className="rounded-md bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700" key={host}>
+                  {host}
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              Merchant checkout is skipped unless T3N approves the structured purchase intent and releases sealed checkout placeholders.
+            </p>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MandatesPage({ inventory, mandates }: { inventory: InventoryItem[]; mandates: RefillMandate[] }) {
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
@@ -741,7 +1012,10 @@ function AuditPage({ auditRows }: { auditRows: AuditLogEntry[] }) {
           <div className="grid gap-2 border-b border-slate-100 px-4 py-3 text-sm last:border-b-0 sm:grid-cols-[92px_110px_1fr]" key={entry.id}>
             <span className="font-medium text-slate-500">{new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
             <span className="font-semibold capitalize text-slate-700">{entry.actorType}</span>
-            <span className="text-slate-800">{entry.title}</span>
+            <span className="min-w-0 text-slate-800">
+              <span className="block font-semibold">{entry.title}</span>
+              <span className="mt-1 block break-words font-mono text-xs text-slate-400">hash {entry.hash.slice(0, 16)}{entry.executionId ? ` / exec ${entry.executionId}` : ""}</span>
+            </span>
           </div>
         ))}
       </div>
@@ -777,6 +1051,8 @@ function MandateCard({ inventory, mandate }: { inventory?: InventoryItem; mandat
         <StatusRow label="Quantity" value={String(mandate.maxQuantity)} />
         <StatusRow label="Delivery" value={`${mandate.delivery.maxDays} days`} />
         <StatusRow label="Merchants" value={mandate.approvedMerchants.join(", ")} />
+        <StatusRow label="Consent" value={mandate.requiresUserConfirmation ? "Ask before T3N" : "Auto within mandate"} />
+        <StatusRow label="Payment ref" value={mandate.sensitiveFieldRefs.paymentMethodRef} />
       </div>
     </article>
   );
@@ -856,6 +1132,7 @@ function scenarioChipClass(tone: "run" | "block" | "neutral", active: boolean) {
 }
 
 function traceActorClass(actor: AgentTraceEntry["actor"]) {
+  if (actor === "user") return "text-amber-200";
   if (actor === "llm") return "text-violet-300";
   if (actor === "policy") return "text-amber-300";
   if (actor === "t3n") return "text-emerald-300";
@@ -908,6 +1185,8 @@ function flowConnectorClass(status: AgentTraceEntry["status"]) {
 function flowOutcomeClass(status: AgentRunResult["authorizationResult"]["status"]) {
   if (status === "approved") return "bg-emerald-50 text-emerald-700";
   if (status === "manual_review") return "bg-amber-50 text-amber-700";
+  if (status === "pending_user_approval") return "bg-amber-50 text-amber-700";
+  if (status === "user_rejected") return "bg-slate-100 text-slate-600";
   if (status === "blocked") return "bg-rose-50 text-rose-700";
   return "bg-slate-100 text-slate-600";
 }
@@ -916,6 +1195,8 @@ function statusLabel(status: AgentRunResult["authorizationResult"]["status"]) {
   if (status === "approved") return "Approved";
   if (status === "manual_review") return "Manual review";
   if (status === "not_needed") return "No refill needed";
+  if (status === "pending_user_approval") return "Needs approval";
+  if (status === "user_rejected") return "Rejected";
   return "Blocked";
 }
 

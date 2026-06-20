@@ -59,7 +59,7 @@ export const seedMandates: RefillMandate[] = [
     maxQuantity: 1,
     trigger: { type: "days_remaining", thresholdDays: 4 },
     delivery: { maxDays: 3 },
-    requiresUserConfirmation: false,
+    requiresUserConfirmation: true,
     sensitiveFieldRefs: demoUser.sealedRefs,
     createdAt: now,
     updatedAt: now
@@ -198,6 +198,7 @@ export const seedAudit: AuditLogEntry[] = [
   {
     id: "audit_seed_mandate",
     timestamp: now,
+    hash: "seed_hash_contact_lens_mandate",
     actorType: "user",
     actorId: demoUser.id,
     eventType: "mandate_created",

@@ -11,7 +11,18 @@ RefillGuard is a Terminal 3/T3N-backed recurring purchase authorization prototyp
 - `src/lib/llm-orchestrator.ts`: OpenAI-backed action selection for chat requests.
 - `src/lib/policy.ts`: local policy validation logic used by demo mode and mirrored by the contract.
 - `src/lib/t3n-live.ts`: live T3N invocation adapter.
+- `src/app/api/t3n/status/route.ts`: runtime trust-boundary status for demo/live mode.
+- `src/app/api/consent/[consentId]/route.ts`: explicit approval/rejection of pending purchase intents.
 - `contracts/refillguard-auth`: Rust/WASM TEE contract exporting `authorize-purchase`.
+
+## Latest trust-boundary additions
+
+- The UI now has a **T3N setup** tab for identity, sealed refs, contract/function, allowed hosts, and demo/live status.
+- The chat controls group normal approved paths separately from red-team attempts.
+- Confirmation-required mandates pause with `pending_user_approval` before calling T3N.
+- The pet-food mandate demonstrates the explicit approval flow; the contact lens mandate demonstrates autonomous execution inside a narrow scope.
+- The inspector shows **Agent vs T3N** and a merchant receipt with sealed placeholders.
+- Audit entries include hash-chain metadata, decision status, and execution IDs when available.
 - `scripts/t3n/*`: setup, contract registration, delegation, invocation, and balance/debug scripts.
 
 ## T3N state

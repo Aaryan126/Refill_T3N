@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resetStore } from "@/lib/store";
+import { getT3nRuntimeStatus, resetStore } from "@/lib/store";
 
 export async function POST() {
   const store = resetStore();
@@ -9,6 +9,8 @@ export async function POST() {
     mandates: store.mandates,
     inventory: store.inventory,
     products: store.products,
-    audit: store.audit
+    audit: store.audit,
+    pendingConsents: store.pendingConsents,
+    trustStatus: getT3nRuntimeStatus()
   });
 }

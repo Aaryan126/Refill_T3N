@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   createPurchaseIntent,
   getCandidateProducts,
@@ -6,11 +6,17 @@ import {
   shouldRefill
 } from "./agent";
 import { validatePurchaseIntent } from "./policy";
+import { approvePendingConsent, rejectPendingConsent, runAgentScenario } from "./runner";
 import { demoAgent, demoUser, seedInventory, seedMandates, seedProducts } from "./seed";
+import { getStore, resetStore } from "./store";
 
 const lensMandate = seedMandates.find((mandate) => mandate.id === "mandate_lens_001")!;
 const allergyMandate = seedMandates.find((mandate) => mandate.id === "mandate_allergy_001")!;
 const lensInventory = seedInventory.find((item) => item.id === "inventory_lens_001")!;
+
+beforeEach(() => {
+  resetStore();
+});
 
 describe("RefillGuard agent logic", () => {
   it("detects refill when contact lens solution is below threshold", () => {
@@ -83,5 +89,41 @@ describe("RefillGuard policy enforcement", () => {
     expect(serialized).not.toContain("address/home");
     expect(serialized).not.toContain("phone/primary");
     expect(serialized).not.toContain("cvv");
+  });
+});
+
+describe("RefillGuard consent and audit receipts", () => {
+  it("pauses confirmation-required mandates before T3N authorization", async () => {
+    const result = await runAgentScenario({ scenario: "pet_food_success" });
+
+    expect(result.authorizationResult.status).toBe("pending_user_approval");
+    expect(result.pendingConsent?.status).toBe("pending");
+    expect(result.authorizationResult.t3nExecutionId).toBeUndefined();
+  });
+
+  it("continues a pending intent after user approval", async () => {
+    const pending = await runAgentScenario({ scenario: "pet_food_success" });
+    const approved = await approvePendingConsent(pending.pendingConsent!.id);
+
+    expect(approved.authorizationResult.status).toBe("approved");
+    expect(approved.authorizationResult.t3nExecutionId).toContain("t3n_demo_exec");
+    expect(approved.authorizationResult.merchantCheckoutPayload?.paymentMethod).toBe("{{sealed:t3n.payment.default_card}}");
+  });
+
+  it("records rejected consent without authorizing checkout", async () => {
+    const pending = await runAgentScenario({ scenario: "pet_food_success" });
+    const rejected = rejectPendingConsent(pending.pendingConsent!.id);
+
+    expect(rejected.status).toBe("rejected");
+    expect(getStore().audit[0].eventType).toBe("user_consent_rejected");
+    expect(getStore().audit[0].decision).toBe("user_rejected");
+  });
+
+  it("adds hash chain metadata to new audit entries", async () => {
+    await runAgentScenario({ scenario: "success" });
+    const [latest, previous] = getStore().audit;
+
+    expect(latest.hash).toHaveLength(64);
+    expect(latest.previousHash).toBe(previous.hash);
   });
 });

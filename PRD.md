@@ -2072,3 +2072,15 @@ Contact lens solution at 15%
 ## 34. Pitch Summary
 
 RefillGuard is a bounded autonomous refill agent for health and pet essentials. The user delegates a narrow mandate such as: “Buy my approved contact lens solution when bottle level is below 20%, only from Guardian or Watsons, under S$18, max one bottle.” The agent can detect low stock and choose a product, but it cannot checkout directly. Terminal 3 verifies the human, verifies the agent, enforces the mandate, substitutes sealed payment and delivery details, restricts unauthorized merchants, and creates an auditable record. The result is an AI agent that can act on behalf of the user without becoming an unsafe autonomous buyer.
+
+## 27. Implemented Trust-Boundary Upgrade
+
+The current demo now makes the Terminal 3 workflow visible before, during, and after each agent action:
+
+- **Vault setup visibility:** the app shows verified human identity, verified agent identity, sealed payment/address/phone refs, contract/function, allowed hosts, and demo/live mode.
+- **Delegated consent:** mandates expose whether the agent can auto-execute inside scope or must pause for explicit user approval.
+- **Pending consent flow:** the pet-food mandate creates a purchase intent, waits for user approval, then asks T3N only after approval.
+- **Agent/T3N split:** the inspector shows product and merchant data available to the agent separately from sealed fields resolved by T3N.
+- **Sanitized merchant receipt:** approved checkout displays sealed placeholders instead of raw private data.
+- **Red-team validation:** unsafe attempts are grouped in the UI and demonstrate T3N blocking or manual-review routing.
+- **Audit receipts:** audit entries include hash-chain metadata, decisions, actors, and execution IDs where available.

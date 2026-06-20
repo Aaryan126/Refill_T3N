@@ -54,6 +54,20 @@ export type RefillMandate = {
   updatedAt: string;
 };
 
+export type T3nRuntimeStatus = {
+  mode: "demo" | "live";
+  environment: "testnet" | "production";
+  invocationActor: "user_self_call" | "separate_agent";
+  userDid: string;
+  agentDid: string;
+  agentFunded: boolean;
+  contractName: string;
+  contractId?: string;
+  contractVersion?: string;
+  functionName: "authorize-purchase";
+  allowedHosts: string[];
+};
+
 export type InventoryItem = {
   id: string;
   userId: string;
@@ -110,7 +124,7 @@ export type AuthorizationResult = {
   id: string;
   purchaseIntentId: string;
   approved: boolean;
-  status: "approved" | "blocked" | "manual_review" | "not_needed";
+  status: "approved" | "blocked" | "manual_review" | "not_needed" | "pending_user_approval" | "user_rejected";
   checks: PolicyCheck[];
   t3nExecutionId?: string;
   orderId?: string;
@@ -128,9 +142,25 @@ export type AuthorizationResult = {
   createdAt: string;
 };
 
+export type PendingConsent = {
+  id: string;
+  scenario: DemoScenario;
+  mandateId: string;
+  purchaseIntent: PurchaseIntent;
+  product: MerchantProduct;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  resolvedAt?: string;
+};
+
 export type AuditLogEntry = {
   id: string;
   timestamp: string;
+  hash: string;
+  previousHash?: string;
+  decision?: AuthorizationResult["status"];
+  executionId?: string;
   actorType: "user" | "agent" | "terminal3" | "merchant" | "system";
   actorId: string;
   eventType:
@@ -140,6 +170,9 @@ export type AuditLogEntry = {
     | "refill_not_needed"
     | "refill_needed"
     | "purchase_intent_created"
+    | "user_consent_requested"
+    | "user_consent_approved"
+    | "user_consent_rejected"
     | "authorization_approved"
     | "authorization_rejected"
     | "checkout_completed"
@@ -161,7 +194,7 @@ export type DemoScenario =
 export type AgentTraceEntry = {
   id: string;
   at: string;
-  actor: "llm" | "agent" | "policy" | "t3n" | "merchant" | "system";
+  actor: "llm" | "user" | "agent" | "policy" | "t3n" | "merchant" | "system";
   status: "queued" | "running" | "ok" | "blocked" | "review" | "skipped";
   command: string;
   detail: string;
@@ -186,4 +219,6 @@ export type AgentRunResult = {
   policyPrecheck: { approved: boolean; checks: PolicyCheck[] };
   authorizationResult: AuthorizationResult;
   trace: AgentTraceEntry[];
+  pendingConsent?: PendingConsent;
+  trustStatus?: T3nRuntimeStatus;
 };

@@ -37,7 +37,22 @@ Use the chat shortcuts or type directly in the chat bar to run:
 - allergy tablets manual review
 - pet food refill
 
-All checkout attempts pass through the `t3n` adapter. In demo mode it enforces Terminal 3-like checks locally and emits execution IDs, sealed placeholders, and audit events.
+All checkout attempts pass through the `t3n` adapter. In demo mode it enforces Terminal 3-like checks locally and emits execution IDs, sealed placeholders, and hash-linked audit events.
+
+## Trust Boundary Demo
+
+Open the **T3N setup** tab first. It shows the human identity, agent identity, sealed payment/address/phone references, contract/function, allowed merchant hosts, and whether the app is using the demo adapter or live Terminal 3 mode.
+
+The chat workspace now separates normal approved paths from red-team attempts. The right inspector shows:
+
+- what the agent sees in the purchase intent
+- what Terminal 3 resolves from sealed references
+- the sanitized merchant checkout payload
+- the latest audit receipts
+
+Consent is configurable by mandate. The contact lens mandate can auto-execute within scope. The pet-food mandate pauses for explicit user approval before T3N authorization. Regulated allergy tablets route to manual review and never checkout autonomously.
+
+See `HACKATHON_UPDATES.md` for the recommended judging script and scoring-criteria mapping.
 
 ## Terminal 3 Live Mode
 
