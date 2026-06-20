@@ -554,9 +554,6 @@ function AgentResultMessage({
         </div>
       )}
 
-      <div className="mt-4 hidden lg:block">
-        <p className="text-xs text-slate-500">Full terminal trace is also available in the right inspector.</p>
-      </div>
     </ChatBubble>
   );
 }
@@ -608,11 +605,17 @@ function AgentSummary({ result }: { result: AgentRunResult }) {
       ) : null}
 
       {result.purchaseIntent ? (
-        <div className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
-          <MiniFact icon={<ShoppingCart className="h-4 w-4" />} label="Item" value={result.purchaseIntent.productName} />
-          <MiniFact icon={<Search className="h-4 w-4" />} label="Merchant" value={result.purchaseIntent.merchantName} />
-          <MiniFact icon={<ShieldCheck className="h-4 w-4" />} label="Price" value={money.format(result.purchaseIntent.priceSgd)} />
-        </div>
+        <>
+          <div className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
+            <MiniFact icon={<ShoppingCart className="h-4 w-4" />} label="Item" value={result.purchaseIntent.productName} />
+            <MiniFact icon={<Search className="h-4 w-4" />} label="Merchant" value={result.purchaseIntent.merchantName} />
+            <MiniFact icon={<ShieldCheck className="h-4 w-4" />} label="Price" value={money.format(result.purchaseIntent.priceSgd)} />
+          </div>
+          <div className="mt-4 grid gap-3 xl:grid-cols-2">
+            <AgentT3nBoundary result={result} />
+            <MerchantReceipt result={result} />
+          </div>
+        </>
       ) : null}
     </>
   );
@@ -668,8 +671,6 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
 
   return (
     <aside className="hidden flex-col gap-4 overflow-auto bg-slate-50 p-4 lg:order-3 lg:flex lg:h-screen">
-      <AgentTerminal result={result} />
-
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
@@ -683,7 +684,7 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
         ) : (
           <div className="space-y-3">
             <StatusBanner auth={auth} />
-            <div className="max-h-[340px] overflow-auto rounded-md border border-slate-200">
+            <div className="max-h-[260px] overflow-auto rounded-md border border-slate-200">
               {auth.checks.map((check) => (
                 <div className="flex items-start gap-3 border-b border-slate-100 px-3 py-2.5 last:border-b-0" key={check.key}>
                   <span className={`mt-0.5 rounded-full p-0.5 ${check.passed ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
@@ -699,9 +700,6 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
           </div>
         )}
       </section>
-
-      <AgentT3nBoundary result={result} />
-      <MerchantReceipt result={result} />
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
@@ -1067,7 +1065,7 @@ function ChatBubble({ children, role }: { children: React.ReactNode; role: "agen
           <Bot className="h-5 w-5" />
         </div>
       ) : null}
-      <div className={`max-w-[780px] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm ${isUser ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>
+      <div className={`${isUser ? "max-w-[780px] bg-slate-950 text-white" : "w-full max-w-[960px] border border-slate-200 bg-white text-slate-700"} rounded-xl px-4 py-3 text-sm leading-6 shadow-sm`}>
         {children}
       </div>
       {isUser ? (
