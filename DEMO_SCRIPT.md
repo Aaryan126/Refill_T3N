@@ -20,7 +20,7 @@ Live app: `https://refill-t3n.vercel.app`
 
 **Voiceover:**
 
-> This is RefillGuard, an autonomous refill agent for health-adjacent and pet essentials. The goal is not to make a generic shopping bot. The goal is to show how Terminal 3 lets an AI agent act and transact for a user, while keeping identity, authorization, sensitive data, and auditability outside the agent's control.
+> This is RefillGuard, an autonomous refill agent for recurring purchases. In this demo, I use contact lens solution, pet food, and allergy tablets as concrete examples, but the same pattern can apply to many repeat purchases with clear user mandates. The goal is not to make a generic shopping bot. The goal is to show how Terminal 3 lets an AI agent act and transact for a user, while keeping identity, authorization, sensitive data, and auditability outside the agent's control.
 
 > At the top, the app shows the Terminal 3 mode, the authorization contract, the invocation actor, and the most important security signal: secrets exposed to the agent is zero.
 

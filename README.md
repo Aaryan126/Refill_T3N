@@ -1,6 +1,6 @@
 # RefillGuard
 
-Safe autonomous refills for health-adjacent and pet essentials, built around a Terminal 3 authorization boundary.
+Safe autonomous refills for recurring purchases, built around a Terminal 3 authorization boundary. The demo uses health-adjacent and pet essentials as concrete examples.
 
 ## Run
 

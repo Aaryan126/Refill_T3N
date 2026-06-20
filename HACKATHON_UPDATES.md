@@ -19,7 +19,7 @@ This file tracks the additions made to make Terminal 3 central and visible in th
 
 - **Completeness**: the demo now covers setup, delegation, intent creation, user approval, T3N authorization, merchant checkout, blocked attempts, manual review, and audit.
 - **SDK integration**: the Terminal 3 boundary is visible at each trust-critical step, and the live SDK adapter remains available behind `DEMO_MODE=false`.
-- **Creativity**: RefillGuard demonstrates bounded autonomy for recurring health-adjacent and pet essentials, including adversarial attempts and consent-sensitive mandates.
+- **Creativity**: RefillGuard demonstrates bounded autonomy for recurring purchases, using health-adjacent and pet essentials as high-trust demo examples with adversarial attempts and consent-sensitive mandates.
 
 ## Recommended Demo Script
 
