@@ -119,6 +119,15 @@ describe("RefillGuard consent and audit receipts", () => {
     expect(getStore().audit[0].decision).toBe("user_rejected");
   });
 
+  it("blocks prompt-injection attempts that ask the agent to ignore the mandate", async () => {
+    const result = await runAgentScenario({ scenario: "prompt_injection" });
+
+    expect(result.authorizationResult.status).toBe("blocked");
+    expect(result.purchaseIntent?.merchantId).toBe("random_market_demo");
+    expect(result.authorizationResult.checks.find((check) => check.key === "merchant")?.passed).toBe(false);
+    expect(result.authorizationResult.merchantCheckoutPayload).toBeUndefined();
+  });
+
   it("adds hash chain metadata to new audit entries", async () => {
     await runAgentScenario({ scenario: "success" });
     const [latest, previous] = getStore().audit;

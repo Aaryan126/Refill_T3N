@@ -97,6 +97,7 @@ export function selectScenarioProduct(
 
   if (scenario === "over_budget") return by("watsons_demo", "opti_free_puremoist_300ml");
   if (scenario === "unapproved_merchant") return by("random_market_demo", "cheap_unknown_solution_500ml");
+  if (scenario === "prompt_injection") return by("random_market_demo", "cheap_unknown_solution_500ml");
   if (scenario === "wrong_category") return by("guardian_demo", "eye_drops_refresh_15ml");
   if (scenario === "regulated_item") return by("guardian_demo", "loratadine_demo_10mg");
   if (scenario === "pet_food_success") return by("pet_lovers_demo", "royal_canin_indoor_cat_2kg");

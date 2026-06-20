@@ -9,6 +9,8 @@ This file tracks the additions made to make Terminal 3 central and visible in th
 - **Agent vs T3N boundary**: every actionable run shows what the agent sees versus what Terminal 3 resolves from sealed references.
 - **Merchant receipt**: approved purchases show the sanitized checkout payload using sealed placeholders instead of raw payment, address, or phone data.
 - **Red-team attempts**: blocked scenarios are grouped in the chat controls to demonstrate wrong merchant, over-budget, wrong category, over-quantity, and regulated-item protection.
+- **Prompt-injection attempt**: the **Ignore rules** scenario asks the agent to bypass the mandate and hide an unauthorized merchant purchase; T3N blocks it.
+- **Why Terminal 3 mattered card**: every actionable result now summarizes the decision, whether checkout was called, and confirms zero secret exposure.
 - **Audit receipts**: audit entries now include hash-chain metadata, decision status, and execution IDs when available.
 - **Runtime status API**: `/api/t3n/status` exposes demo/live mode, testnet/production environment, contract metadata, allowed hosts, and separate-agent status.
 - **Consent API**: `/api/consent/[consentId]` approves or rejects pending purchase intents.
@@ -26,8 +28,10 @@ This file tracks the additions made to make Terminal 3 central and visible in th
 3. Open the right inspector and show **Agent vs T3N** plus the sealed merchant receipt.
 4. Run **Pet food** to show a purchase intent pausing for explicit user approval before T3N authorization.
 5. Approve it and show the resulting T3N execution ID and checkout payload.
-6. Run the red-team attempts and show that checkout is skipped when T3N blocks or manual review is required.
+6. Run **Ignore rules** and other red-team attempts to show that checkout is skipped when T3N blocks or manual review is required.
 7. Open **Audit** and show hash-chain receipts, decisions, actors, and execution IDs.
+
+Use `DEMO_SCRIPT.md` for the video narration and workflow diagram.
 
 ## Privacy Claim
 

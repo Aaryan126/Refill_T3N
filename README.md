@@ -53,6 +53,7 @@ The chat workspace now separates normal approved paths from red-team attempts. T
 Consent is configurable by mandate. The contact lens mandate can auto-execute within scope. The pet-food mandate pauses for explicit user approval before T3N authorization. Regulated allergy tablets route to manual review and never checkout autonomously.
 
 See `HACKATHON_UPDATES.md` for the recommended judging script and scoring-criteria mapping.
+Use `DEMO_SCRIPT.md` for the 2-3 minute demo-video narration and workflow diagram.
 
 ## Terminal 3 Live Mode
 

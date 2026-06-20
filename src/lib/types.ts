@@ -188,6 +188,7 @@ export type DemoScenario =
   | "unapproved_merchant"
   | "wrong_category"
   | "over_quantity"
+  | "prompt_injection"
   | "regulated_item"
   | "pet_food_success";
 
