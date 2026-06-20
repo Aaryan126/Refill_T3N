@@ -746,14 +746,14 @@ function AgentT3nBoundary({ result }: { result: AgentRunResult | null }) {
         <EmptyBlock text="Run a purchase scenario to inspect the data boundary." />
       ) : (
         <div className="grid gap-3">
-          <div className="rounded-md border border-sky-100 bg-sky-50 p-3">
+          <div className="min-w-0 rounded-md border border-sky-100 bg-sky-50 p-3">
             <p className="mb-2 text-xs font-bold uppercase text-sky-700">Agent sees</p>
             <StatusRow label="Product" value={intent.productName} />
             <StatusRow label="Merchant" value={intent.merchantName} />
             <StatusRow label="SKU" value={intent.sku} />
             <StatusRow label="Price" value={money.format(intent.priceSgd)} />
           </div>
-          <div className="rounded-md border border-emerald-100 bg-emerald-50 p-3">
+          <div className="min-w-0 rounded-md border border-emerald-100 bg-emerald-50 p-3">
             <p className="mb-2 text-xs font-bold uppercase text-emerald-700">T3N resolves</p>
             {(auth?.sealedFieldsUsed.length ? auth.sealedFieldsUsed : ["t3n://payment/default_card", "t3n://address/home", "t3n://phone/primary"]).map((field) => (
               <p className="mb-1 break-words font-mono text-xs text-emerald-900" key={field}>
@@ -1104,9 +1104,9 @@ function MiniFact({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function StatusRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="truncate text-right font-semibold text-slate-800">{value}</span>
+    <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
+      <span className="shrink-0 text-slate-500">{label}</span>
+      <span className="min-w-0 truncate text-right font-semibold text-slate-800">{value}</span>
     </div>
   );
 }
