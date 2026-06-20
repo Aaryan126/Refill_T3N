@@ -4,8 +4,8 @@
 
 :root {
   color-scheme: light;
-  background: #f7f8f5;
-  color: #15231d;
+  background: #f8fafc;
+  color: #111827;
 }
 
 * {
@@ -20,9 +20,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(233, 243, 236, 0.7), rgba(247, 248, 245, 0) 420px),
-    #f7f8f5;
-  color: #15231d;
+    linear-gradient(180deg, rgba(224, 242, 254, 0.45), rgba(248, 250, 252, 0) 420px),
+    #f8fafc;
+  color: #111827;
   font-family: Arial, Helvetica, sans-serif;
 }
 

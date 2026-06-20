@@ -187,7 +187,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] text-slate-950">
+    <main className="min-h-screen bg-[#f8fafc] text-slate-950">
       <div className="mx-auto grid min-h-screen w-full max-w-[1680px] grid-cols-1 lg:h-screen lg:grid-cols-[280px_1fr_380px] lg:overflow-hidden">
         <section className="order-1 flex h-[100dvh] min-h-0 flex-col border-x border-slate-200 bg-white lg:order-2 lg:h-screen">
           <TopBar result={result} running={running} trustStatus={state?.trustStatus ?? null} />
@@ -259,7 +259,7 @@ function Sidebar({
   return (
     <aside className="order-2 flex flex-col gap-5 border-b border-slate-200 bg-slate-50 p-4 lg:order-1 lg:h-screen lg:overflow-auto lg:border-b-0">
       <div className="flex items-center gap-3 px-1">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-600 text-white">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
@@ -291,14 +291,14 @@ function Sidebar({
       <section className="rounded-lg border border-slate-200 bg-white p-3">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <SlidersHorizontal className="h-4 w-4 text-emerald-700" />
+            <SlidersHorizontal className="h-4 w-4 text-sky-700" />
             Stock level
           </div>
-          <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{stockValue}%</span>
+          <span className="rounded-md bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-700">{stockValue}%</span>
         </div>
         <input
           aria-label="Bottle level"
-          className="w-full accent-emerald-700"
+          className="w-full accent-sky-700"
           max={100}
           min={0}
           onChange={(event) => updateStock(Number(event.target.value))}
@@ -308,7 +308,7 @@ function Sidebar({
         <div className="mt-3 grid grid-cols-3 gap-2">
           {[50, 15, 5].map((value) => (
             <button
-              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
               key={value}
               onClick={() => updateStock(value)}
               type="button"
@@ -321,7 +321,7 @@ function Sidebar({
 
       <section className="rounded-lg border border-slate-200 bg-white p-3">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-          <Archive className="h-4 w-4 text-emerald-700" />
+          <Archive className="h-4 w-4 text-sky-700" />
           Active scopes
         </div>
         <div className="grid gap-2">
@@ -360,7 +360,7 @@ function TopBar({
     <header className="flex min-h-16 items-center justify-between gap-4 border-b border-slate-200 px-4 sm:px-6">
       <div>
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-          <Bot className="h-4 w-4 text-emerald-700" />
+          <Bot className="h-4 w-4 text-sky-700" />
           Refill assistant
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5">
@@ -371,7 +371,7 @@ function TopBar({
         </div>
       </div>
       <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-        {running ? <RefreshCcw className="h-4 w-4 animate-spin text-emerald-700" /> : <ShieldCheck className="h-4 w-4 text-emerald-700" />}
+        {running ? <RefreshCcw className="h-4 w-4 animate-spin text-sky-700" /> : <ShieldCheck className="h-4 w-4 text-sky-700" />}
         {status}
       </div>
     </header>
@@ -379,7 +379,7 @@ function TopBar({
 }
 
 function TopBadge({ label }: { label: string }) {
-  return <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100">{label}</span>;
+  return <span className="rounded-md bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800 ring-1 ring-sky-100">{label}</span>;
 }
 
 function ChatWorkspace({
@@ -473,7 +473,7 @@ function ChatWorkspace({
             value={chatInput}
           />
           <button
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:bg-slate-300"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-wait disabled:bg-slate-300"
             disabled={running !== null || chatInput.trim().length === 0}
             onClick={runChat}
             type="button"
@@ -506,7 +506,7 @@ function AgentResultMessage({
   return (
     <ChatBubble role="agent">
       <div className="flex items-start gap-3">
-        <span className={`mt-0.5 rounded-full p-1 ${approved ? "bg-emerald-100 text-emerald-700" : manual ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
+        <span className={`mt-0.5 rounded-full p-1 ${approved ? "bg-sky-100 text-sky-700" : manual ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
           {approved ? <Check className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
         </span>
         <div className="min-w-0 flex-1">
@@ -526,7 +526,7 @@ function AgentResultMessage({
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
-                  className="h-9 rounded-md bg-emerald-600 px-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:bg-slate-300"
+                  className="h-9 rounded-md bg-sky-600 px-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:bg-slate-300"
                   disabled={running}
                   onClick={() => decideConsent(result.pendingConsent!.id, "approve")}
                   type="button"
@@ -613,9 +613,9 @@ function AgentSummary({ result }: { result: AgentRunResult }) {
   return (
     <>
       {result.orchestration ? (
-        <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900">
+        <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-900">
           <p className="font-semibold">{result.orchestration.userFacingReply}</p>
-          <p className="mt-1 text-emerald-800">
+          <p className="mt-1 text-sky-800">
             LLM routed this as {scenarios.find((scenario) => scenario.id === result.orchestration?.scenario)?.label ?? result.orchestration.scenario} with{" "}
             {Math.round(result.orchestration.confidence * 100)}% confidence.
           </p>
@@ -655,12 +655,12 @@ function WhyT3nMattered({ result }: { result: AgentRunResult }) {
             : auth.blockedReason ?? "T3N did not approve this action.";
 
   return (
-    <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-950">
-        <ShieldCheck className="h-4 w-4 text-emerald-700" />
+    <div className="mt-4 rounded-lg border border-sky-200 bg-sky-50 p-3">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-sky-950">
+        <ShieldCheck className="h-4 w-4 text-sky-700" />
         Why Terminal 3 mattered
       </div>
-      <p className="text-xs leading-5 text-emerald-900">{reason}</p>
+      <p className="text-xs leading-5 text-sky-900">{reason}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <MiniFact icon={<LockKeyhole className="h-4 w-4" />} label="Secrets exposed" value="0" />
         <MiniFact icon={<ShoppingCart className="h-4 w-4" />} label="Checkout called" value={auth.approved ? "Yes" : "No"} />
@@ -677,7 +677,7 @@ function AgentFlowchart({ result }: { result: AgentRunResult }) {
     <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-          <GitBranch className="h-4 w-4 text-emerald-700" />
+          <GitBranch className="h-4 w-4 text-sky-700" />
           Task flow
         </div>
         <span className={`rounded-md px-2 py-1 text-xs font-semibold ${flowOutcomeClass(result.authorizationResult.status)}`}>
@@ -723,7 +723,7 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-            <FileCheck2 className="h-4 w-4 text-emerald-700" />
+            <FileCheck2 className="h-4 w-4 text-sky-700" />
             T3N inspector
           </div>
           <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{total ? `${passed}/${total}` : "idle"}</span>
@@ -736,7 +736,7 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
             <div className="max-h-[260px] overflow-auto rounded-md border border-slate-200">
               {auth.checks.map((check) => (
                 <div className="flex items-start gap-3 border-b border-slate-100 px-3 py-2.5 last:border-b-0" key={check.key}>
-                  <span className={`mt-0.5 rounded-full p-0.5 ${check.passed ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                  <span className={`mt-0.5 rounded-full p-0.5 ${check.passed ? "bg-sky-100 text-sky-700" : "bg-rose-100 text-rose-700"}`}>
                     {check.passed ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
                   </span>
                   <div>
@@ -752,7 +752,7 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
-          <LockKeyhole className="h-4 w-4 text-emerald-700" />
+          <LockKeyhole className="h-4 w-4 text-sky-700" />
           Sealed fields
         </div>
         <div className="grid gap-2">
@@ -766,7 +766,7 @@ function Inspector({ result, auditRows }: { result: AgentRunResult | null; audit
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
-          <History className="h-4 w-4 text-emerald-700" />
+          <History className="h-4 w-4 text-sky-700" />
           Latest audit
         </div>
         <div className="space-y-2">
@@ -786,7 +786,7 @@ function AgentT3nBoundary({ result }: { result: AgentRunResult | null }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
-        <GitBranch className="h-4 w-4 text-emerald-700" />
+        <GitBranch className="h-4 w-4 text-sky-700" />
         Agent vs T3N
       </div>
       {!intent ? (
@@ -800,10 +800,10 @@ function AgentT3nBoundary({ result }: { result: AgentRunResult | null }) {
             <StatusRow label="SKU" value={intent.sku} />
             <StatusRow label="Price" value={money.format(intent.priceSgd)} />
           </div>
-          <div className="min-w-0 rounded-md border border-emerald-100 bg-emerald-50 p-3">
-            <p className="mb-2 text-xs font-bold uppercase text-emerald-700">T3N resolves</p>
+          <div className="min-w-0 rounded-md border border-sky-100 bg-sky-50 p-3">
+            <p className="mb-2 text-xs font-bold uppercase text-sky-700">T3N resolves</p>
             {(auth?.sealedFieldsUsed.length ? auth.sealedFieldsUsed : ["t3n://payment/default_card", "t3n://address/home", "t3n://phone/primary"]).map((field) => (
-              <p className="mb-1 break-words font-mono text-xs text-emerald-900" key={field}>
+              <p className="mb-1 break-words font-mono text-xs text-sky-900" key={field}>
                 {field}
               </p>
             ))}
@@ -820,7 +820,7 @@ function MerchantReceipt({ result }: { result: AgentRunResult | null }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
-        <ShoppingCart className="h-4 w-4 text-emerald-700" />
+        <ShoppingCart className="h-4 w-4 text-sky-700" />
         Merchant receipt
       </div>
       {!payload ? (
@@ -842,7 +842,7 @@ function AgentTerminal({ compact = false, result }: { compact?: boolean; result:
     <section className={`${compact ? "" : "rounded-lg border border-slate-200 bg-white p-4"}`}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-          <SquareTerminal className="h-4 w-4 text-emerald-700" />
+          <SquareTerminal className="h-4 w-4 text-sky-700" />
           Agent terminal
         </div>
         <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{trace.length ? `${trace.length} steps` : "idle"}</span>
@@ -851,7 +851,7 @@ function AgentTerminal({ compact = false, result }: { compact?: boolean; result:
       <div className={`overflow-auto rounded-lg bg-slate-950 p-3 font-mono text-[11px] leading-5 text-slate-200 shadow-inner ${compact ? "max-h-56" : "max-h-[420px]"}`}>
         {!trace.length ? (
           <div className="text-slate-400">
-            <span className="text-emerald-300">$</span> waiting for an agent task
+            <span className="text-sky-300">$</span> waiting for an agent task
           </div>
         ) : (
           <div className="space-y-2">
@@ -958,7 +958,7 @@ function TrustSetupPage({ state }: { state: DemoState | null }) {
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mb-5 flex items-center gap-2">
-        <LockKeyhole className="h-5 w-5 text-emerald-700" />
+        <LockKeyhole className="h-5 w-5 text-sky-700" />
         <h2 className="text-xl font-semibold">T3N Trust Setup</h2>
       </div>
 
@@ -968,7 +968,7 @@ function TrustSetupPage({ state }: { state: DemoState | null }) {
         <div className="grid gap-4 xl:grid-cols-2">
           <section className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
-              <User className="h-4 w-4 text-emerald-700" />
+              <User className="h-4 w-4 text-sky-700" />
               Verified identities
             </div>
             <div className="grid gap-3">
@@ -981,7 +981,7 @@ function TrustSetupPage({ state }: { state: DemoState | null }) {
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
-              <ShieldCheck className="h-4 w-4 text-emerald-700" />
+              <ShieldCheck className="h-4 w-4 text-sky-700" />
               Runtime boundary
             </div>
             <div className="grid gap-3">
@@ -995,7 +995,7 @@ function TrustSetupPage({ state }: { state: DemoState | null }) {
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
-              <LockKeyhole className="h-4 w-4 text-emerald-700" />
+              <LockKeyhole className="h-4 w-4 text-sky-700" />
               Sealed vault references
             </div>
             <div className="grid gap-2">
@@ -1011,7 +1011,7 @@ function TrustSetupPage({ state }: { state: DemoState | null }) {
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-950">
-              <GitBranch className="h-4 w-4 text-emerald-700" />
+              <GitBranch className="h-4 w-4 text-sky-700" />
               Delegated outbound scope
             </div>
             <div className="grid gap-2">
@@ -1035,7 +1035,7 @@ function MandatesPage({ inventory, mandates }: { inventory: InventoryItem[]; man
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mb-5 flex items-center gap-2">
-        <ClipboardList className="h-5 w-5 text-emerald-700" />
+        <ClipboardList className="h-5 w-5 text-sky-700" />
         <h2 className="text-xl font-semibold">Mandates</h2>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
@@ -1051,7 +1051,7 @@ function AuditPage({ auditRows }: { auditRows: AuditLogEntry[] }) {
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mb-5 flex items-center gap-2">
-        <History className="h-5 w-5 text-emerald-700" />
+        <History className="h-5 w-5 text-sky-700" />
         <h2 className="text-xl font-semibold">Audit</h2>
       </div>
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -1091,7 +1091,7 @@ function MandateCard({ inventory, mandate }: { inventory?: InventoryItem; mandat
           <h3 className="font-semibold text-slate-950">{inventory?.name ?? readableCategory(mandate.category)}</h3>
           <p className="mt-1 text-sm text-slate-500">{trigger}</p>
         </div>
-        <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">{current}</span>
+        <span className="rounded-md bg-sky-50 px-2.5 py-1 text-sm font-semibold text-sky-700">{current}</span>
       </div>
       <div className="grid gap-2 text-sm">
         <StatusRow label="Budget" value={money.format(mandate.maxPriceSgd)} />
@@ -1110,7 +1110,7 @@ function ChatBubble({ children, role }: { children: React.ReactNode; role: "agen
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser ? (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white">
           <Bot className="h-5 w-5" />
         </div>
       ) : null}
@@ -1130,7 +1130,7 @@ function StatusBanner({ auth }: { auth: AgentRunResult["authorizationResult"] })
   const approved = auth.status === "approved";
   const manual = auth.status === "manual_review";
   return (
-    <div className={`rounded-lg border px-3 py-3 ${approved ? "border-emerald-200 bg-emerald-50" : manual ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}>
+    <div className={`rounded-lg border px-3 py-3 ${approved ? "border-sky-200 bg-sky-50" : manual ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}>
       <p className="text-sm font-semibold text-slate-950">{statusLabel(auth.status)}</p>
       <p className="mt-1 text-xs text-slate-600">{auth.t3nExecutionId ?? auth.blockedReason ?? "No execution id yet"}</p>
     </div>
@@ -1173,7 +1173,7 @@ function EmptyBlock({ text }: { text: string }) {
 
 function scenarioChipClass(tone: "run" | "block" | "neutral", active: boolean) {
   if (active) return "border-slate-950 bg-slate-950 text-white";
-  if (tone === "run") return "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100";
+  if (tone === "run") return "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100";
   if (tone === "block") return "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100";
   return "border-slate-200 bg-white text-slate-600 hover:bg-slate-100";
 }
@@ -1182,14 +1182,14 @@ function traceActorClass(actor: AgentTraceEntry["actor"]) {
   if (actor === "user") return "text-amber-200";
   if (actor === "llm") return "text-violet-300";
   if (actor === "policy") return "text-amber-300";
-  if (actor === "t3n") return "text-emerald-300";
+  if (actor === "t3n") return "text-sky-300";
   if (actor === "merchant") return "text-cyan-300";
   if (actor === "system") return "text-slate-300";
   return "text-sky-300";
 }
 
 function traceStatusClass(status: AgentTraceEntry["status"]) {
-  if (status === "ok") return "text-emerald-300";
+  if (status === "ok") return "text-sky-300";
   if (status === "blocked") return "text-rose-300";
   if (status === "review") return "text-amber-300";
   if (status === "skipped") return "text-slate-500";
@@ -1198,7 +1198,7 @@ function traceStatusClass(status: AgentTraceEntry["status"]) {
 }
 
 function flowNodeClass(status: AgentTraceEntry["status"]) {
-  if (status === "ok") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "ok") return "border-sky-200 bg-sky-50 text-sky-700";
   if (status === "blocked") return "border-rose-200 bg-rose-50 text-rose-700";
   if (status === "review") return "border-amber-200 bg-amber-50 text-amber-700";
   if (status === "skipped") return "border-slate-200 bg-slate-100 text-slate-500";
@@ -1209,12 +1209,12 @@ function flowNodeClass(status: AgentTraceEntry["status"]) {
 function flowCardClass(status: AgentTraceEntry["status"]) {
   if (status === "blocked") return "border-rose-200";
   if (status === "review") return "border-amber-200";
-  if (status === "ok") return "border-emerald-100";
+  if (status === "ok") return "border-sky-100";
   return "border-slate-200";
 }
 
 function flowBadgeClass(status: AgentTraceEntry["status"]) {
-  if (status === "ok") return "bg-emerald-50 text-emerald-700";
+  if (status === "ok") return "bg-sky-50 text-sky-700";
   if (status === "blocked") return "bg-rose-50 text-rose-700";
   if (status === "review") return "bg-amber-50 text-amber-700";
   if (status === "skipped") return "bg-slate-100 text-slate-500";
@@ -1225,12 +1225,12 @@ function flowBadgeClass(status: AgentTraceEntry["status"]) {
 function flowConnectorClass(status: AgentTraceEntry["status"]) {
   if (status === "blocked") return "bg-rose-200";
   if (status === "review") return "bg-amber-200";
-  if (status === "ok") return "bg-emerald-200";
+  if (status === "ok") return "bg-sky-200";
   return "bg-slate-200";
 }
 
 function flowOutcomeClass(status: AgentRunResult["authorizationResult"]["status"]) {
-  if (status === "approved") return "bg-emerald-50 text-emerald-700";
+  if (status === "approved") return "bg-sky-50 text-sky-700";
   if (status === "manual_review") return "bg-amber-50 text-amber-700";
   if (status === "pending_user_approval") return "bg-amber-50 text-amber-700";
   if (status === "user_rejected") return "bg-slate-100 text-slate-600";
